@@ -1,0 +1,3791 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>青丝 · QingSi OS · 四核纪元</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;600&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+:root {
+  --ink: #1c1a17;
+  --ink-soft: #3a3530;
+  --paper: #ebe2d0;
+  --paper-deep: #d9ceb8;
+  --willow: #7a8b6f;
+  --willow-deep: #4f5e48;
+  --willow-mist: #a8b89a;
+  --rust: #a8553a;
+  --plum: #6b3a4a;
+  --gold: #b08a4a;
+  --jade: #5d7a6f;
+  --cinnabar: #c44a3a;
+  --shadow: rgba(28, 26, 23, 0.15);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  color: var(--ink);
+  background: var(--paper);
+  cursor: default;
+}
+
+#desktop {
+  position: fixed; inset: 0;
+  background: 
+    radial-gradient(ellipse at 30% 20%, rgba(168, 184, 154, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(176, 138, 74, 0.15) 0%, transparent 60%),
+    linear-gradient(170deg, #e8dec8 0%, #ddd1b6 50%, #c9bb9c 100%);
+  overflow: hidden;
+}
+
+#desktop::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.35;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.willow-branch {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.7;
+  transform-origin: top center;
+  animation: sway 8s ease-in-out infinite;
+}
+.willow-branch.b1 { top: -20px; left: 5%; width: 200px; animation-delay: 0s; }
+.willow-branch.b2 { top: -20px; left: 22%; width: 280px; animation-delay: -2s; opacity: 0.5; }
+.willow-branch.b3 { top: -20px; right: 8%; width: 240px; animation-delay: -4s; opacity: 0.6; }
+.willow-branch.b4 { top: -20px; right: 30%; width: 180px; animation-delay: -6s; opacity: 0.4; }
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.mountain {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 30%;
+  pointer-events: none;
+  opacity: 0.18;
+}
+
+.petal {
+  position: absolute;
+  width: 8px; height: 12px;
+  background: var(--willow-deep);
+  border-radius: 0 100% 0 100%;
+  pointer-events: none;
+  animation: fall linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes fall {
+  0% { transform: translateY(-50px) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.5; }
+  90% { opacity: 0.5; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+#topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: linear-gradient(180deg, rgba(28,26,23,0.92), rgba(28,26,23,0.85));
+  color: var(--paper);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(176, 138, 74, 0.3);
+}
+
+#topbar .brand {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#topbar .meta {
+  display: flex;
+  gap: 30px;
+  font-family: 'ZCOOL XiaoWei', serif;
+}
+
+#topbar .meta span { opacity: 0.85; }
+#topbar .meta .clock { color: var(--gold); }
+
+#topbar .greeting {
+  color: var(--willow-mist);
+  font-style: italic;
+}
+
+#topbar .core-status {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.core-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  position: relative;
+}
+.core-dot.active { background: var(--willow-mist); box-shadow: 0 0 4px var(--willow-mist); }
+.core-dot.gold.active { background: var(--gold); box-shadow: 0 0 4px var(--gold); }
+
+#desktop-icons {
+  position: absolute;
+  top: 70px; left: 30px;
+  display: grid;
+  grid-template-columns: repeat(2, 90px);
+  gap: 18px;
+}
+
+.desk-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.desk-icon:hover {
+  background: rgba(28, 26, 23, 0.08);
+}
+
+.desk-icon .ico {
+  width: 48px; height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 28px;
+  color: var(--paper);
+  background: linear-gradient(135deg, var(--ink-soft), var(--ink));
+  border: 1px solid var(--gold);
+  box-shadow: 0 4px 12px var(--shadow), inset 0 1px 0 rgba(176,138,74,0.3);
+  border-radius: 2px;
+  position: relative;
+}
+
+.desk-icon[data-app="files"] .ico { background: linear-gradient(135deg, var(--willow-deep), var(--ink-soft)); }
+.desk-icon[data-app="editor"] .ico { background: linear-gradient(135deg, var(--plum), var(--ink-soft)); }
+.desk-icon[data-app="image"] .ico { background: linear-gradient(135deg, var(--rust), var(--ink-soft)); }
+.desk-icon[data-app="terminal"] .ico { background: linear-gradient(135deg, var(--ink), var(--ink-soft)); }
+.desk-icon[data-app="poem"] .ico { background: linear-gradient(135deg, var(--gold), var(--ink-soft)); color: var(--ink); }
+.desk-icon[data-app="storage"] .ico { background: linear-gradient(135deg, var(--jade), var(--ink-soft)); }
+.desk-icon[data-app="settings"] .ico { background: linear-gradient(135deg, var(--ink-soft), var(--plum)); }
+
+.desk-icon .label {
+  font-size: 12px;
+  color: var(--ink);
+  font-family: 'ZCOOL XiaoWei', serif;
+  letter-spacing: 0.1em;
+  text-shadow: 0 1px 2px rgba(235, 226, 208, 0.8);
+}
+
+.window {
+  position: absolute;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 
+    0 20px 60px rgba(28, 26, 23, 0.35),
+    0 0 0 1px rgba(176, 138, 74, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  min-width: 360px;
+  min-height: 240px;
+  border-radius: 2px;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.window.active { z-index: 500; }
+
+.window-titlebar {
+  height: 36px;
+  background: linear-gradient(180deg, var(--ink) 0%, var(--ink-soft) 100%);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  cursor: move;
+  border-bottom: 1px solid var(--gold);
+  position: relative;
+}
+
+.window-titlebar::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.window-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 16px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  flex: 1;
+}
+
+.window-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.window-btn {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(235, 226, 208, 0.3);
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.window-btn.min { background: var(--gold); }
+.window-btn.max { background: var(--willow); }
+.window-btn.close { background: var(--cinnabar); }
+
+.window-btn:hover { color: var(--ink); }
+
+.window-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  background: var(--paper);
+  position: relative;
+}
+
+.window-body::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 16px; height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--ink) 50%, var(--ink) 60%, transparent 60%, transparent 70%, var(--ink) 70%, var(--ink) 80%, transparent 80%);
+  background-size: 100% 100%;
+  z-index: 10;
+}
+
+.fm-sidebar {
+  width: 200px;
+  background: linear-gradient(180deg, var(--paper-deep), var(--paper));
+  border-right: 1px solid var(--ink-soft);
+  padding: 16px 0;
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+}
+
+.fm-sidebar h3 {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--ink-soft);
+  padding: 0 18px 8px;
+  border-bottom: 1px dashed var(--ink-soft);
+  margin: 0 12px 12px;
+}
+
+.fm-tree-item {
+  padding: 7px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'ZCOOL XiaoWei', serif;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  transition: all 0.2s;
+  border-left: 2px solid transparent;
+}
+
+.fm-tree-item:hover {
+  background: rgba(122, 139, 111, 0.15);
+  border-left-color: var(--willow);
+}
+
+.fm-tree-item.active {
+  background: rgba(168, 85, 58, 0.12);
+  border-left-color: var(--rust);
+  color: var(--rust);
+}
+
+.fm-tree-item .arrow {
+  width: 10px;
+  font-size: 9px;
+  transition: transform 0.2s;
+}
+
+.fm-recent-item {
+  padding: 5px 18px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: 'Noto Serif SC', serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.fm-recent-item:hover {
+  background: rgba(176, 138, 74, 0.1);
+  border-left-color: var(--gold);
+  color: var(--ink);
+}
+
+.fm-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.fm-toolbar {
+  padding: 10px 16px;
+  background: var(--paper-deep);
+  border-bottom: 1px solid var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fm-btn {
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  padding: 6px 14px;
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.fm-btn:hover {
+  background: var(--ink);
+  color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--shadow);
+}
+
+.fm-btn.danger:hover { background: var(--cinnabar); color: var(--paper); }
+.fm-btn.primary { background: var(--willow-deep); color: var(--paper); border-color: var(--willow-deep); }
+.fm-btn.primary:hover { background: var(--ink); color: var(--gold); }
+
+.fm-path {
+  flex: 1;
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  font-family: 'Noto Serif SC', monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+  min-width: 200px;
+  border-radius: 2px;
+}
+
+.fm-search {
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 12px;
+  width: 140px;
+  border-radius: 2px;
+  color: var(--ink);
+  outline: none;
+}
+
+.fm-search:focus { border-color: var(--rust); }
+
+.fm-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  position: relative;
+}
+
+.fm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+
+.fm-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.fm-item:hover {
+  background: rgba(122, 139, 111, 0.1);
+  border-color: var(--willow);
+}
+
+.fm-item.selected {
+  background: rgba(168, 85, 58, 0.15);
+  border-color: var(--rust);
+}
+
+.fm-item .fi-icon {
+  width: 56px; height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 28px;
+  color: var(--paper);
+  background: linear-gradient(135deg, var(--ink-soft), var(--ink));
+  border: 1px solid var(--gold);
+  margin-bottom: 6px;
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 2px 6px var(--shadow);
+}
+
+.fm-item[data-type="folder"] .fi-icon {
+  background: linear-gradient(135deg, var(--willow-deep), var(--ink-soft));
+}
+.fm-item[data-type="image"] .fi-icon {
+  background: linear-gradient(135deg, var(--rust), var(--ink-soft));
+}
+.fm-item[data-type="text"] .fi-icon {
+  background: linear-gradient(135deg, var(--plum), var(--ink-soft));
+}
+.fm-item[data-type="binary"] .fi-icon {
+  background: linear-gradient(135deg, var(--ink), var(--jade));
+}
+
+.fm-item .fi-name {
+  font-size: 11px;
+  text-align: center;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--ink);
+  word-break: break-all;
+  line-height: 1.3;
+  max-height: 2.6em;
+  overflow: hidden;
+}
+
+.fm-item .fi-size {
+  font-size: 9px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  font-family: 'Noto Serif SC', monospace;
+}
+
+.fm-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.fm-list-header, .fm-list-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 100px 120px 80px;
+  gap: 10px;
+  padding: 8px 12px;
+  align-items: center;
+  font-size: 12px;
+  border-bottom: 1px dashed rgba(28, 26, 23, 0.15);
+}
+
+.fm-list-header {
+  font-family: 'Ma Shan Zheng', cursive;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  background: var(--paper-deep);
+  border-bottom: 1px solid var(--ink-soft);
+  position: sticky; top: 0;
+  z-index: 2;
+}
+
+.fm-list-row {
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fm-list-row:hover { background: rgba(122, 139, 111, 0.1); }
+.fm-list-row.selected { background: rgba(168, 85, 58, 0.15); }
+
+.fm-list-row .li-icon {
+  width: 24px; height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink-soft);
+  color: var(--gold);
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 14px;
+  border-radius: 2px;
+}
+
+.fm-statusbar {
+  padding: 6px 16px;
+  background: var(--paper-deep);
+  border-top: 1px solid var(--ink-soft);
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-family: 'Noto Serif SC', serif;
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.fm-empty {
+  padding: 60px 20px;
+  text-align: center;
+  font-family: 'Ma Shan Zheng', cursive;
+  color: var(--ink-soft);
+}
+
+.fm-empty .big {
+  font-size: 80px;
+  color: var(--willow-mist);
+  margin-bottom: 16px;
+}
+
+.fm-empty .text {
+  font-size: 16px;
+  letter-spacing: 0.3em;
+  color: var(--ink-soft);
+  font-family: 'Ma Shan Zheng', cursive;
+}
+
+.fm-empty .sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  opacity: 0.7;
+  margin-top: 8px;
+  font-family: 'ZCOOL XiaoWei', serif;
+  letter-spacing: 0.2em;
+  font-style: italic;
+}
+
+#dock {
+  position: fixed;
+  bottom: 12px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(28, 26, 23, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  z-index: 999;
+  box-shadow: 0 8px 32px rgba(28, 26, 23, 0.4);
+}
+
+.dock-item {
+  width: 40px; height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 18px;
+  color: var(--gold);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.dock-item:hover {
+  background: rgba(176, 138, 74, 0.2);
+  border-color: var(--gold);
+  transform: translateY(-3px);
+}
+
+.dock-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  width: 4px; height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+}
+
+.editor-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 30px 50px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+  line-height: 2;
+  color: var(--ink);
+  position: relative;
+  z-index: 1;
+  background-image: 
+    linear-gradient(transparent 31px, rgba(176, 138, 74, 0.15) 31px, rgba(176, 138, 74, 0.15) 32px, transparent 32px);
+  background-size: 100% 32px;
+}
+
+.editor-toolbar {
+  padding: 8px 16px;
+  background: var(--paper-deep);
+  border-bottom: 1px solid var(--ink-soft);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.editor-info {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-family: 'Noto Serif SC', monospace;
+}
+
+.editor-draft-indicator {
+  font-size: 10px;
+  color: var(--gold);
+  font-family: 'ZCOOL XiaoWei', serif;
+  letter-spacing: 0.2em;
+  margin-right: 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.editor-draft-indicator.show { opacity: 1; }
+
+.terminal-body {
+  flex: 1;
+  background: #0f0d0a;
+  color: #d4c896;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  padding: 16px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.terminal-line {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+.terminal-line .prompt { color: var(--willow-mist); }
+.terminal-line .path { color: var(--gold); }
+.terminal-line .error { color: var(--cinnabar); }
+.terminal-line .ok { color: var(--willow-mist); }
+.terminal-line .dim { color: #6a6354; }
+
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #d4c896;
+  font-family: inherit;
+  font-size: inherit;
+  caret-color: var(--gold);
+}
+
+.image-viewer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: 
+    repeating-conic-gradient(rgba(28,26,23,0.05) 0% 25%, transparent 0% 50%) 
+    50% / 20px 20px;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.image-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  border: 1px solid var(--ink);
+  box-shadow: 0 8px 24px var(--shadow);
+}
+
+.storage-panel {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.storage-card {
+  background: var(--paper-deep);
+  border: 1px solid var(--ink-soft);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 2px;
+  position: relative;
+}
+
+.storage-card h3 {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  color: var(--ink);
+  margin-bottom: 12px;
+  border-bottom: 1px dashed var(--ink-soft);
+  padding-bottom: 8px;
+}
+
+.storage-bar {
+  height: 18px;
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 12px 0;
+  position: relative;
+}
+
+.storage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--willow), var(--rust));
+  transition: width 0.6s ease;
+}
+
+.storage-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.storage-stat {
+  text-align: center;
+  padding: 10px;
+  background: var(--paper);
+  border: 1px dashed var(--ink-soft);
+}
+
+.storage-stat .num {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 24px;
+  color: var(--rust);
+  display: block;
+}
+
+.storage-stat .lbl {
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.2em;
+  font-family: 'ZCOOL XiaoWei', serif;
+}
+
+.core-card {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.core-item {
+  padding: 14px;
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  border-left: 3px solid var(--ink-soft);
+  border-radius: 2px;
+}
+
+.core-item.active { border-left-color: var(--willow-deep); }
+.core-item.warn { border-left-color: var(--gold); }
+.core-item.off { border-left-color: var(--cinnabar); opacity: 0.6; }
+
+.core-item .core-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 16px;
+  letter-spacing: 0.2em;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.core-item .core-status-text {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+  font-family: 'Noto Serif SC', monospace;
+}
+
+.core-item .core-desc {
+  font-size: 11px;
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-style: italic;
+  line-height: 1.6;
+  font-family: 'ZCOOL XiaoWei', serif;
+  letter-spacing: 0.1em;
+}
+
+.poem-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.poem-scroll {
+  max-width: 500px;
+  background: linear-gradient(180deg, var(--paper-deep), var(--paper));
+  padding: 50px 40px;
+  border: 1px solid var(--ink-soft);
+  box-shadow: 0 8px 24px var(--shadow);
+  text-align: center;
+  position: relative;
+}
+
+.poem-scroll::before, .poem-scroll::after {
+  content: '';
+  position: absolute;
+  left: -10px; right: -10px;
+  height: 14px;
+  background: linear-gradient(180deg, var(--ink-soft), var(--ink));
+  border: 1px solid var(--gold);
+}
+.poem-scroll::before { top: -14px; }
+.poem-scroll::after { bottom: -14px; }
+
+.poem-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 28px;
+  letter-spacing: 0.3em;
+  color: var(--ink);
+  margin-bottom: 24px;
+  border-bottom: 1px dashed var(--ink-soft);
+  padding-bottom: 16px;
+}
+
+.poem-text {
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 18px;
+  line-height: 2.4;
+  color: var(--ink-soft);
+  letter-spacing: 0.15em;
+}
+
+.poem-author {
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--rust);
+  font-style: italic;
+  letter-spacing: 0.3em;
+}
+
+.settings-panel {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.settings-section {
+  background: var(--paper-deep);
+  border: 1px solid var(--ink-soft);
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 2px;
+}
+
+.settings-section h3 {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  color: var(--ink);
+  margin-bottom: 12px;
+  border-bottom: 1px dashed var(--ink-soft);
+  padding-bottom: 8px;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed rgba(28,26,23,0.1);
+}
+.settings-row:last-child { border-bottom: none; }
+
+.settings-row .label {
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+.settings-row .desc {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  font-style: italic;
+}
+
+.toggle {
+  width: 44px; height: 22px;
+  background: var(--ink-soft);
+  border-radius: 11px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.toggle.on { background: var(--willow-deep); }
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  background: var(--paper);
+  border-radius: 50%;
+  top: 2px; left: 2px;
+  transition: all 0.3s;
+}
+
+.toggle.on::after { left: 24px; }
+
+.context-menu {
+  position: fixed;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 0 8px 24px rgba(28, 26, 23, 0.3);
+  min-width: 160px;
+  z-index: 9999;
+  padding: 4px 0;
+  border-radius: 2px;
+}
+
+.ctx-item {
+  padding: 8px 18px;
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s;
+}
+
+.ctx-item:hover {
+  background: var(--ink);
+  color: var(--gold);
+}
+
+.ctx-item.danger:hover { background: var(--cinnabar); color: var(--paper); }
+
+.ctx-divider {
+  height: 1px;
+  background: var(--ink-soft);
+  margin: 4px 8px;
+  opacity: 0.3;
+}
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(28, 26, 23, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  min-width: 360px;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(28, 26, 23, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.modal-header {
+  background: linear-gradient(180deg, var(--ink), var(--ink-soft));
+  color: var(--gold);
+  padding: 12px 20px;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 16px;
+  letter-spacing: 0.3em;
+  border-bottom: 1px solid var(--gold);
+}
+
+.modal-body {
+  padding: 24px 20px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.8;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--paper-deep);
+  border: 1px solid var(--ink-soft);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  margin-top: 12px;
+  border-radius: 2px;
+}
+
+.modal-input:focus { border-color: var(--rust); }
+
+.modal-footer {
+  padding: 12px 20px;
+  background: var(--paper-deep);
+  border-top: 1px solid var(--ink-soft);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#toast-area {
+  position: fixed;
+  top: 50px; right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-left: 4px solid var(--willow-deep);
+  padding: 12px 18px;
+  min-width: 240px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 13px;
+  color: var(--ink);
+  box-shadow: 0 4px 16px var(--shadow);
+  border-radius: 2px;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+}
+
+.toast.error { border-left-color: var(--cinnabar); }
+.toast.success { border-left-color: var(--willow-deep); }
+.toast.info { border-left-color: var(--gold); }
+.toast.sync { border-left-color: var(--jade); }
+
+.toast .t-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  margin-bottom: 4px;
+}
+
+.toast .t-msg {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-family: 'ZCOOL XiaoWei', serif;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(20px); }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--paper-deep); }
+::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink); }
+
+#splash {
+  position: fixed; inset: 0;
+  background: var(--ink);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 30px;
+  transition: opacity 0.8s;
+}
+
+#splash .splash-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 80px;
+  color: var(--gold);
+  letter-spacing: 0.5em;
+  animation: fadeIn 1s ease;
+}
+
+#splash .splash-sub {
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 14px;
+  color: var(--paper);
+  letter-spacing: 0.6em;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+#splash .splash-cores {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+#splash .splash-core {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 4px 12px;
+  border: 1px solid var(--ink-soft);
+  letter-spacing: 0.3em;
+  transition: all 0.5s;
+  opacity: 0;
+}
+
+#splash .splash-core.lit {
+  color: var(--gold);
+  border-color: var(--gold);
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(176,138,74,0.4);
+}
+
+#splash .splash-loader {
+  width: 200px; height: 1px;
+  background: var(--ink-soft);
+  position: relative;
+  overflow: hidden;
+}
+#splash .splash-loader::after {
+  content: '';
+  position: absolute;
+  width: 50%; height: 100%;
+  background: var(--gold);
+  animation: load 1.5s ease infinite;
+}
+
+@keyframes load {
+  0% { left: -50%; }
+  100% { left: 100%; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-overlay {
+  position: fixed; inset: 0;
+  background: rgba(28, 26, 23, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 99998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.6s;
+}
+
+.welcome-card {
+  background: var(--paper);
+  border: 1px solid var(--gold);
+  padding: 50px 60px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+
+.welcome-card h1 {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 60px;
+  color: var(--ink);
+  letter-spacing: 0.4em;
+  margin-bottom: 8px;
+}
+
+.welcome-card .sub {
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 14px;
+  color: var(--ink-soft);
+  letter-spacing: 0.4em;
+  margin-bottom: 30px;
+  font-style: italic;
+}
+
+.welcome-card .desc {
+  font-size: 14px;
+  line-height: 2;
+  color: var(--ink-soft);
+  margin-bottom: 30px;
+  text-align: left;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.welcome-card .name-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--paper-deep);
+  border: 1px solid var(--ink-soft);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 20px;
+  text-align: center;
+  letter-spacing: 0.3em;
+}
+
+.welcome-card .name-input:focus { border-color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-title">青丝</div>
+  <div class="splash-sub">— 一缕青丝 · 万千旧梦 —</div>
+  <div class="splash-cores">
+    <div class="splash-core" id="sc-1">真文</div>
+    <div class="splash-core" id="sc-2">索引</div>
+    <div class="splash-core" id="sc-3">疾风</div>
+    <div class="splash-core" id="sc-4">羽信</div>
+  </div>
+  <div class="splash-loader"></div>
+</div>
+
+<div id="desktop">
+  <svg class="willow-branch b1" viewBox="0 0 100 300">
+    <path d="M50,0 Q48,80 52,160 Q50,220 48,290" stroke="#4f5e48" stroke-width="2" fill="none"/>
+    <g fill="#7a8b6f" opacity="0.8">
+      <ellipse cx="45" cy="60" rx="2" ry="8" transform="rotate(-30 45 60)"/>
+      <ellipse cx="55" cy="80" rx="2" ry="8" transform="rotate(30 55 80)"/>
+      <ellipse cx="44" cy="100" rx="2" ry="8" transform="rotate(-25 44 100)"/>
+      <ellipse cx="56" cy="125" rx="2" ry="8" transform="rotate(35 56 125)"/>
+      <ellipse cx="46" cy="150" rx="2" ry="8" transform="rotate(-30 46 150)"/>
+      <ellipse cx="54" cy="180" rx="2" ry="8" transform="rotate(28 54 180)"/>
+      <ellipse cx="45" cy="210" rx="2" ry="8" transform="rotate(-32 45 210)"/>
+      <ellipse cx="55" cy="240" rx="2" ry="8" transform="rotate(30 55 240)"/>
+      <ellipse cx="47" cy="270" rx="2" ry="8" transform="rotate(-28 47 270)"/>
+    </g>
+  </svg>
+  <svg class="willow-branch b2" viewBox="0 0 100 300">
+    <path d="M50,0 Q52,90 48,170 Q52,230 50,290" stroke="#4f5e48" stroke-width="2" fill="none"/>
+    <g fill="#7a8b6f" opacity="0.8">
+      <ellipse cx="46" cy="50" rx="2" ry="8" transform="rotate(-28 46 50)"/>
+      <ellipse cx="54" cy="75" rx="2" ry="8" transform="rotate(32 54 75)"/>
+      <ellipse cx="45" cy="105" rx="2" ry="8" transform="rotate(-30 45 105)"/>
+      <ellipse cx="56" cy="135" rx="2" ry="8" transform="rotate(30 56 135)"/>
+      <ellipse cx="44" cy="165" rx="2" ry="8" transform="rotate(-32 44 165)"/>
+      <ellipse cx="55" cy="195" rx="2" ry="8" transform="rotate(28 55 195)"/>
+      <ellipse cx="46" cy="225" rx="2" ry="8" transform="rotate(-30 46 225)"/>
+      <ellipse cx="54" cy="255" rx="2" ry="8" transform="rotate(32 54 255)"/>
+    </g>
+  </svg>
+  <svg class="willow-branch b3" viewBox="0 0 100 300">
+    <path d="M50,0 Q49,85 51,165 Q48,225 50,290" stroke="#4f5e48" stroke-width="2" fill="none"/>
+    <g fill="#7a8b6f" opacity="0.8">
+      <ellipse cx="45" cy="55" rx="2" ry="8" transform="rotate(-30 45 55)"/>
+      <ellipse cx="55" cy="85" rx="2" ry="8" transform="rotate(30 55 85)"/>
+      <ellipse cx="44" cy="115" rx="2" ry="8" transform="rotate(-28 44 115)"/>
+      <ellipse cx="56" cy="145" rx="2" ry="8" transform="rotate(32 56 145)"/>
+      <ellipse cx="45" cy="175" rx="2" ry="8" transform="rotate(-30 45 175)"/>
+      <ellipse cx="55" cy="205" rx="2" ry="8" transform="rotate(30 55 205)"/>
+      <ellipse cx="46" cy="235" rx="2" ry="8" transform="rotate(-32 46 235)"/>
+      <ellipse cx="54" cy="265" rx="2" ry="8" transform="rotate(28 54 265)"/>
+    </g>
+  </svg>
+  <svg class="willow-branch b4" viewBox="0 0 100 300">
+    <path d="M50,0 Q51,80 49,160 Q51,220 50,290" stroke="#4f5e48" stroke-width="2" fill="none"/>
+    <g fill="#7a8b6f" opacity="0.8">
+      <ellipse cx="46" cy="60" rx="2" ry="8" transform="rotate(-28 46 60)"/>
+      <ellipse cx="54" cy="90" rx="2" ry="8" transform="rotate(30 54 90)"/>
+      <ellipse cx="45" cy="120" rx="2" ry="8" transform="rotate(-30 45 120)"/>
+      <ellipse cx="55" cy="150" rx="2" ry="8" transform="rotate(32 55 150)"/>
+      <ellipse cx="46" cy="180" rx="2" ry="8" transform="rotate(-28 46 180)"/>
+      <ellipse cx="54" cy="220" rx="2" ry="8" transform="rotate(30 54 220)"/>
+      <ellipse cx="45" cy="260" rx="2" ry="8" transform="rotate(-32 45 260)"/>
+    </g>
+  </svg>
+
+  <svg class="mountain" viewBox="0 0 1200 300" preserveAspectRatio="none">
+    <path d="M0,300 L0,200 Q150,100 300,150 Q450,80 600,140 Q750,60 900,130 Q1050,90 1200,170 L1200,300 Z" fill="#4f5e48"/>
+    <path d="M0,300 L0,240 Q200,180 400,210 Q600,160 800,200 Q1000,170 1200,220 L1200,300 Z" fill="#3a3530" opacity="0.6"/>
+  </svg>
+
+  <div id="topbar">
+    <div class="brand">
+      青丝
+    </div>
+    <div class="meta">
+      <span class="greeting" id="greeting"></span>
+      <span class="core-status" id="core-status" title="四核状态">
+        <span class="core-dot" id="core-opfs" title="OPFS"></span>
+        <span class="core-dot" id="core-idb" title="IndexedDB"></span>
+        <span class="core-dot" id="core-ls" title="localStorage"></span>
+        <span class="core-dot gold" id="core-ck" title="Cookie"></span>
+      </span>
+      <span id="solar"></span>
+      <span class="clock" id="clock">--:--</span>
+      <span id="storage-meta">— 仓廪 —</span>
+    </div>
+  </div>
+
+  <div id="desktop-icons">
+    <div class="desk-icon" data-app="files"><div class="ico">册</div><div class="label">书阁</div></div>
+    <div class="desk-icon" data-app="editor"><div class="ico">墨</div><div class="label">笔砚</div></div>
+    <div class="desk-icon" data-app="image"><div class="ico">画</div><div class="label">画轩</div></div>
+    <div class="desk-icon" data-app="terminal"><div class="ico">令</div><div class="label">符令</div></div>
+    <div class="desk-icon" data-app="storage"><div class="ico">仓</div><div class="label">仓廪</div></div>
+    <div class="desk-icon" data-app="poem"><div class="ico">诗</div><div class="label">诗笺</div></div>
+    <div class="desk-icon" data-app="settings"><div class="ico">设</div><div class="label">设阁</div></div>
+  </div>
+
+  <div id="dock">
+    <div class="dock-item" data-app="files" title="书阁">册</div>
+    <div class="dock-item" data-app="editor" title="笔砚">墨</div>
+    <div class="dock-item" data-app="image" title="画轩">画</div>
+    <div class="dock-item" data-app="terminal" title="符令">令</div>
+    <div class="dock-item" data-app="storage" title="仓廪">仓</div>
+    <div class="dock-item" data-app="poem" title="诗笺">诗</div>
+    <div class="dock-item" data-app="settings" title="设阁">设</div>
+  </div>
+</div>
+
+<div id="toast-area"></div>
+
+<script>
+/* ===========================================================
+   青丝 OS · 四核纪元
+   QuadCore: OPFS + IndexedDB + localStorage + Cookie
+   =========================================================== */
+
+const QingSi = {
+  version: '2.0.0-quadcore',
+  fs: null,
+  prefs: null,
+  cookie: null,
+  cache: null,
+  sync: null,
+  windows: {},
+  zIndex: 100,
+  cores: { opfs: false, idb: false, ls: false, ck: false }
+};
+
+/* ============================================================
+   第三剑客:疾风刃 (localStorage 抽象层)
+   - 偏好持久化
+   - 热缓存
+   - 草稿暂存
+   - 最近访问
+   ============================================================ */
+class PrefsManager {
+  constructor() {
+    this.prefix = 'qs:pref:';
+    this.draftPrefix = 'qs:draft:';
+    this.cachePrefix = 'qs:cache:';
+    this.recentKey = 'qs:recent';
+    this.available = false;
+    try {
+      localStorage.setItem('__qs_test__', '1');
+      localStorage.removeItem('__qs_test__');
+      this.available = true;
+    } catch (e) {
+      console.warn('localStorage 不可用,疾风刃缺席');
+    }
+  }
+
+  set(key, value) {
+    if (!this.available) return false;
+    try {
+      localStorage.setItem(this.prefix + key, JSON.stringify(value));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  get(key, def = null) {
+    if (!this.available) return def;
+    try {
+      const v = localStorage.getItem(this.prefix + key);
+      return v === null ? def : JSON.parse(v);
+    } catch (e) { return def; }
+  }
+
+  remove(key) {
+    if (!this.available) return;
+    localStorage.removeItem(this.prefix + key);
+  }
+
+  // 草稿管理
+  saveDraft(path, content) {
+    if (!this.available) return;
+    try {
+      localStorage.setItem(this.draftPrefix + path, JSON.stringify({
+        content, ts: Date.now()
+      }));
+    } catch (e) {}
+  }
+
+  getDraft(path) {
+    if (!this.available) return null;
+    try {
+      const v = localStorage.getItem(this.draftPrefix + path);
+      return v ? JSON.parse(v) : null;
+    } catch (e) { return null; }
+  }
+
+  removeDraft(path) {
+    if (!this.available) return;
+    localStorage.removeItem(this.draftPrefix + path);
+  }
+
+  listDrafts() {
+    if (!this.available) return [];
+    const drafts = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(this.draftPrefix)) {
+        const path = k.slice(this.draftPrefix.length);
+        try {
+          drafts.push({ path, ...JSON.parse(localStorage.getItem(k)) });
+        } catch (e) {}
+      }
+    }
+    return drafts;
+  }
+
+  // 缓存
+  cache(key, data) {
+    if (!this.available) return;
+    try {
+      localStorage.setItem(this.cachePrefix + key, JSON.stringify({
+        data, ts: Date.now()
+      }));
+    } catch (e) {
+      // 配额超出,清理一些缓存
+      this.clearCache();
+    }
+  }
+
+  getCache(key, maxAge = Infinity) {
+    if (!this.available) return null;
+    try {
+      const v = localStorage.getItem(this.cachePrefix + key);
+      if (!v) return null;
+      const obj = JSON.parse(v);
+      if (Date.now() - obj.ts > maxAge) return null;
+      return obj.data;
+    } catch (e) { return null; }
+  }
+
+  clearCache() {
+    if (!this.available) return;
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(this.cachePrefix)) toRemove.push(k);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+  }
+
+  // 最近访问
+  recordAccess(path) {
+    if (!this.available) return;
+    try {
+      const list = JSON.parse(localStorage.getItem(this.recentKey) || '[]');
+      const filtered = list.filter(x => x.path !== path);
+      filtered.unshift({ path, ts: Date.now() });
+      localStorage.setItem(this.recentKey, JSON.stringify(filtered.slice(0, 12)));
+    } catch (e) {}
+  }
+
+  getRecent() {
+    if (!this.available) return [];
+    try {
+      return JSON.parse(localStorage.getItem(this.recentKey) || '[]');
+    } catch (e) { return []; }
+  }
+
+  // 容量统计
+  getUsage() {
+    if (!this.available) return { used: 0, items: 0 };
+    let used = 0, items = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('qs:'))) {
+        used += (k.length + (localStorage.getItem(k) || '').length) * 2;
+        items++;
+      }
+    }
+    return { used, items };
+  }
+
+  purgeAll() {
+    if (!this.available) return;
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('qs:')) toRemove.push(k);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+  }
+}
+
+/* ============================================================
+   第四剑客:羽信笺 (Cookie 抽象层)
+   - 用户身份
+   - 跨域共享
+   - 过期机制
+   - 一次性提示
+   ============================================================ */
+class CookieManager {
+  constructor() {
+    this.prefix = 'qs_';
+    this.available = navigator.cookieEnabled;
+    if (!this.available) console.warn('Cookie 不可用,羽信笺缺席');
+  }
+
+  set(key, value, options = {}) {
+    if (!this.available) return false;
+    const opts = {
+      path: '/',
+      maxAge: options.maxAge ?? 31536000, // 默认 1 年
+      sameSite: options.sameSite ?? 'Lax',
+      ...options
+    };
+    let str = `${this.prefix}${key}=${encodeURIComponent(value)}`;
+    str += `; path=${opts.path}`;
+    str += `; max-age=${opts.maxAge}`;
+    str += `; samesite=${opts.sameSite}`;
+    if (opts.secure) str += '; secure';
+    if (opts.domain) str += `; domain=${opts.domain}`;
+    document.cookie = str;
+    return true;
+  }
+
+  get(key, def = null) {
+    if (!this.available) return def;
+    const name = this.prefix + key + '=';
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+      c = c.trim();
+      if (c.startsWith(name)) {
+        return decodeURIComponent(c.slice(name.length));
+      }
+    }
+    return def;
+  }
+
+  remove(key) {
+    if (!this.available) return;
+    document.cookie = `${this.prefix}${key}=; path=/; max-age=0`;
+  }
+
+  // 标记一次性事件
+  markOnce(key, days = 365) {
+    this.set(key, '1', { maxAge: days * 86400 });
+  }
+
+  hasOnce(key) {
+    return this.get(key) === '1';
+  }
+
+  // 列出所有青丝 cookie
+  listAll() {
+    if (!this.available) return [];
+    const result = [];
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+      c = c.trim();
+      if (c.startsWith(this.prefix)) {
+        const eqIdx = c.indexOf('=');
+        result.push({
+          name: c.slice(this.prefix.length, eqIdx),
+          value: decodeURIComponent(c.slice(eqIdx + 1))
+        });
+      }
+    }
+    return result;
+  }
+
+  purgeAll() {
+    if (!this.available) return;
+    const all = this.listAll();
+    for (const c of all) this.remove(c.name);
+  }
+}
+
+/* ============================================================
+   跨标签同步管家 (基于 storage event)
+   ============================================================ */
+class SyncManager {
+  constructor() {
+    this.eventKey = 'qs:sync:event';
+    this.listeners = new Set();
+    this.tabId = Math.random().toString(36).slice(2, 10);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === this.eventKey && e.newValue) {
+          try {
+            const evt = JSON.parse(e.newValue);
+            if (evt.tabId !== this.tabId) {
+              this.listeners.forEach(fn => {
+                try { fn(evt); } catch (err) {}
+              });
+            }
+          } catch (err) {}
+        }
+      });
+    }
+  }
+
+  broadcast(type, payload) {
+    try {
+      localStorage.setItem(this.eventKey, JSON.stringify({
+        tabId: this.tabId, type, payload, ts: Date.now()
+      }));
+    } catch (e) {}
+  }
+
+  on(fn) {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+}
+
+/* ============================================================
+   主从核:OPFS + IndexedDB
+   ============================================================ */
+class HybridFS {
+  constructor() {
+    this.dbName = 'qingsi_fs';
+    this.dbVersion = 1;
+    this.db = null;
+    this.opfsRoot = null;
+    this.useOPFS = false;
+  }
+
+  async init() {
+    this.db = await this._openDB();
+    QingSi.cores.idb = true;
+    
+    try {
+      if ('storage' in navigator && 'getDirectory' in navigator.storage) {
+        this.opfsRoot = await navigator.storage.getDirectory();
+        this.useOPFS = true;
+        QingSi.cores.opfs = true;
+        console.log('%c[青丝]%c OPFS 启用', 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
+      }
+    } catch (e) {
+      console.warn('OPFS 不可用,IDB 兜底');
+    }
+
+    const root = await this.getNode('/');
+    if (!root) {
+      await this._putNode({
+        path: '/', name: '/', type: 'folder',
+        parent: null, created: Date.now(), modified: Date.now(), size: 0
+      });
+      await this._seedDefaults();
+    }
+  }
+
+  _openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(this.dbName, this.dbVersion);
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => resolve(req.result);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('nodes')) {
+          const store = db.createObjectStore('nodes', { keyPath: 'path' });
+          store.createIndex('parent', 'parent', { unique: false });
+          store.createIndex('name', 'name', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('blobs')) {
+          db.createObjectStore('blobs', { keyPath: 'path' });
+        }
+      };
+    });
+  }
+
+  async _seedDefaults() {
+    await this.mkdir('/文档');
+    await this.mkdir('/图画');
+    await this.mkdir('/诗稿');
+    await this.mkdir('/杂项');
+    await this.writeFile('/诗稿/江城子.txt', 
+      `江城子·乙卯正月二十日夜记梦\n\n苏轼\n\n十年生死两茫茫,不思量,自难忘。\n千里孤坟,无处话凄凉。\n纵使相逢应不识,尘满面,鬓如霜。\n\n夜来幽梦忽还乡,小轩窗,正梳妆。\n相顾无言,惟有泪千行。\n料得年年肠断处,明月夜,短松冈。`);
+    await this.writeFile('/诗稿/声声慢.txt',
+      `声声慢·寻寻觅觅\n\n李清照\n\n寻寻觅觅,冷冷清清,凄凄惨惨戚戚。\n乍暖还寒时候,最难将息。\n三杯两盏淡酒,怎敌他、晚来风急?\n雁过也,正伤心,却是旧时相识。\n\n满地黄花堆积。憔悴损,如今有谁堪摘?\n守着窗儿,独自怎生得黑?\n梧桐更兼细雨,到黄昏、点点滴滴。\n这次第,怎一个愁字了得!`);
+    await this.writeFile('/文档/README.txt',
+      `欢迎来到 青丝 OS · 四核纪元\n\n【四核架构】\n[剑] OPFS         真实文件之骨\n[盾] IndexedDB    结构元数之脉\n[刃] localStorage 热缓信号之血\n[笺] Cookie       身份过期之神\n\n【四核合璧带来的能力】\n- 启动速度 ↑10倍(LS 缓存目录树)\n- 跨标签实时同步(storage event)\n- 草稿自动恢复(永不丢字)\n- 最近访问列表\n- 用户偏好持久记忆\n- 一次性欢迎语\n- 优雅降级(四层防护)\n\n打开"仓廪"查看四核状态\n打开"设阁"管理你的偏好\n\n— 青丝团队`);
+  }
+
+  _tx(stores, mode = 'readonly') {
+    return this.db.transaction(stores, mode);
+  }
+
+  async getNode(path) {
+    return new Promise((resolve, reject) => {
+      const req = this._tx(['nodes']).objectStore('nodes').get(path);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async _putNode(node) {
+    return new Promise((resolve, reject) => {
+      const req = this._tx(['nodes'], 'readwrite').objectStore('nodes').put(node);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async _deleteNodeMeta(path) {
+    return new Promise((resolve, reject) => {
+      const req = this._tx(['nodes'], 'readwrite').objectStore('nodes').delete(path);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async listChildren(path) {
+    return new Promise((resolve, reject) => {
+      const tx = this._tx(['nodes']);
+      const idx = tx.objectStore('nodes').index('parent');
+      const req = idx.getAll(path);
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getAllNodes() {
+    return new Promise((resolve, reject) => {
+      const req = this._tx(['nodes']).objectStore('nodes').getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async _writeBlob(path, data) {
+    if (this.useOPFS) {
+      try {
+        const handle = await this._getOPFSFile(path, true);
+        const writable = await handle.createWritable();
+        await writable.write(data);
+        await writable.close();
+        return;
+      } catch (e) {
+        console.warn('OPFS 写入失败,回退 IDB:', e);
+      }
+    }
+    return new Promise((resolve, reject) => {
+      const req = this._tx(['blobs'], 'readwrite').objectStore('blobs').put({ path, data });
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async _readBlob(path) {
+    if (this.useOPFS) {
+      try {
+        const handle = await this._getOPFSFile(path, false);
+        if (handle) return await handle.getFile();
+      } catch (e) {}
+    }
+    return new Promise((resolve, reject) => {
+      const req = this._tx(['blobs']).objectStore('blobs').get(path);
+      req.onsuccess = () => {
+        const r = req.result;
+        if (!r) return resolve(null);
+        if (r.data instanceof Blob) resolve(r.data);
+        else resolve(new Blob([r.data]));
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async _deleteBlob(path) {
+    if (this.useOPFS) {
+      try {
+        const parts = path.split('/').filter(Boolean);
+        const fileName = parts.pop();
+        let dir = this.opfsRoot;
+        for (const p of parts) {
+          dir = await dir.getDirectoryHandle(p, { create: false }).catch(() => null);
+          if (!dir) break;
+        }
+        if (dir) await dir.removeEntry(fileName).catch(() => {});
+      } catch (e) {}
+    }
+    return new Promise((resolve) => {
+      const req = this._tx(['blobs'], 'readwrite').objectStore('blobs').delete(path);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+    });
+  }
+
+  async _getOPFSFile(path, create = false) {
+    const parts = path.split('/').filter(Boolean);
+    const fileName = parts.pop();
+    let dir = this.opfsRoot;
+    for (const p of parts) {
+      dir = await dir.getDirectoryHandle(p, { create });
+    }
+    return await dir.getFileHandle(fileName, { create });
+  }
+
+  _parentPath(path) {
+    if (path === '/') return null;
+    const i = path.lastIndexOf('/');
+    return i === 0 ? '/' : path.substring(0, i);
+  }
+
+  _basename(path) { return path.split('/').filter(Boolean).pop() || '/'; }
+
+  _join(parent, name) {
+    return parent === '/' ? '/' + name : parent + '/' + name;
+  }
+
+  _detectType(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (['png','jpg','jpeg','gif','webp','svg','bmp'].includes(ext)) return 'image';
+    if (['txt','md','json','js','css','html','xml','csv','log','yml','yaml'].includes(ext)) return 'text';
+    return 'binary';
+  }
+
+  async exists(path) { return !!(await this.getNode(path)); }
+
+  async mkdir(path, recursive = true) {
+    if (await this.exists(path)) throw new Error('已存在: ' + path);
+    const parent = this._parentPath(path);
+    if (parent && !(await this.exists(parent))) {
+      if (recursive) await this.mkdir(parent);
+      else throw new Error('父目录不存在');
+    }
+    if (this.useOPFS) {
+      try {
+        const parts = path.split('/').filter(Boolean);
+        let dir = this.opfsRoot;
+        for (const p of parts) {
+          dir = await dir.getDirectoryHandle(p, { create: true });
+        }
+      } catch (e) {}
+    }
+    await this._putNode({
+      path, name: this._basename(path), type: 'folder', parent,
+      created: Date.now(), modified: Date.now(), size: 0
+    });
+    QingSi.sync?.broadcast('fs:created', { path, type: 'folder' });
+    QingSi.cache?.invalidate(parent || '/');
+  }
+
+  async writeFile(path, content) {
+    const parent = this._parentPath(path);
+    if (parent && !(await this.exists(parent))) await this.mkdir(parent);
+    let blob;
+    if (content instanceof Blob) blob = content;
+    else if (content instanceof ArrayBuffer) blob = new Blob([content]);
+    else blob = new Blob([String(content)], { type: 'text/plain' });
+    
+    await this._writeBlob(path, blob);
+    const name = this._basename(path);
+    await this._putNode({
+      path, name, type: this._detectType(name), parent,
+      created: Date.now(), modified: Date.now(), size: blob.size, mime: blob.type
+    });
+    QingSi.sync?.broadcast('fs:written', { path });
+    QingSi.cache?.invalidate(parent || '/');
+  }
+
+  async readFile(path, asText = false) {
+    const blob = await this._readBlob(path);
+    if (!blob) return null;
+    if (asText) return await blob.text();
+    return blob;
+  }
+
+  async delete(path) {
+    if (path === '/') throw new Error('不可删除根目录');
+    const node = await this.getNode(path);
+    if (!node) throw new Error('不存在: ' + path);
+    if (node.type === 'folder') {
+      const children = await this.listChildren(path);
+      for (const c of children) await this.delete(c.path);
+    } else {
+      await this._deleteBlob(path);
+    }
+    await this._deleteNodeMeta(path);
+    // 清理草稿
+    QingSi.prefs?.removeDraft(path);
+    QingSi.sync?.broadcast('fs:deleted', { path });
+    QingSi.cache?.invalidate(this._parentPath(path) || '/');
+  }
+
+  async rename(oldPath, newName) {
+    const node = await this.getNode(oldPath);
+    if (!node) throw new Error('不存在');
+    const parent = this._parentPath(oldPath);
+    const newPath = this._join(parent, newName);
+    if (await this.exists(newPath)) throw new Error('新名已存在');
+    await this.move(oldPath, newPath);
+  }
+
+  async move(oldPath, newPath) {
+    const node = await this.getNode(oldPath);
+    if (!node) throw new Error('不存在');
+    if (node.type === 'folder') {
+      await this._putNode({
+        ...node, path: newPath, name: this._basename(newPath),
+        parent: this._parentPath(newPath), modified: Date.now()
+      });
+      const children = await this.listChildren(oldPath);
+      for (const c of children) {
+        await this.move(c.path, this._join(newPath, c.name));
+      }
+      await this._deleteNodeMeta(oldPath);
+    } else {
+      const blob = await this._readBlob(oldPath);
+      await this._writeBlob(newPath, blob);
+      await this._deleteBlob(oldPath);
+      await this._putNode({
+        ...node, path: newPath, name: this._basename(newPath),
+        parent: this._parentPath(newPath), modified: Date.now()
+      });
+      await this._deleteNodeMeta(oldPath);
+    }
+    QingSi.sync?.broadcast('fs:moved', { oldPath, newPath });
+    QingSi.cache?.invalidate(this._parentPath(oldPath) || '/');
+    QingSi.cache?.invalidate(this._parentPath(newPath) || '/');
+  }
+
+  async copy(srcPath, destPath) {
+    const node = await this.getNode(srcPath);
+    if (!node) throw new Error('源不存在');
+    if (node.type === 'folder') {
+      await this.mkdir(destPath);
+      const children = await this.listChildren(srcPath);
+      for (const c of children) {
+        await this.copy(c.path, this._join(destPath, c.name));
+      }
+    } else {
+      const blob = await this._readBlob(srcPath);
+      await this.writeFile(destPath, blob);
+    }
+  }
+
+  async search(query, root = '/') {
+    const all = await this.getAllNodes();
+    const q = query.toLowerCase();
+    return all.filter(n => n.path !== '/' && n.name.toLowerCase().includes(q) && n.path.startsWith(root));
+  }
+
+  async stats() {
+    const all = await this.getAllNodes();
+    let totalSize = 0, fileCount = 0, folderCount = 0;
+    const typeCount = { text: 0, image: 0, binary: 0, folder: 0 };
+    for (const n of all) {
+      if (n.path === '/') continue;
+      typeCount[n.type] = (typeCount[n.type] || 0) + 1;
+      if (n.type === 'folder') folderCount++;
+      else { fileCount++; totalSize += (n.size || 0); }
+    }
+    let quota = null;
+    if (navigator.storage && navigator.storage.estimate) {
+      quota = await navigator.storage.estimate();
+    }
+    return { totalSize, fileCount, folderCount, typeCount, quota, useOPFS: this.useOPFS };
+  }
+}
+
+/* ============================================================
+   缓存协调器 - 让 LS 替 IDB 加速
+   ============================================================ */
+class CacheCoordinator {
+  constructor(prefs) {
+    this.prefs = prefs;
+    this.maxAge = 60000; // 缓存 1 分钟
+  }
+
+  async listCached(path) {
+    const cached = this.prefs?.getCache('list:' + path, this.maxAge);
+    return cached;
+  }
+
+  cacheList(path, items) {
+    this.prefs?.cache('list:' + path, items);
+  }
+
+  invalidate(path) {
+    if (!this.prefs?.available) return;
+    // 清掉受影响目录的缓存
+    try {
+      localStorage.removeItem(this.prefs.cachePrefix + 'list:' + path);
+    } catch (e) {}
+  }
+
+  invalidateAll() {
+    this.prefs?.clearCache();
+  }
+}
+
+/* ============================================================
+   工具
+   ============================================================ */
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+}
+
+function fmtTime(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fmtRelTime(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return '片刻前';
+  if (diff < 3600000) return Math.floor(diff/60000) + ' 分钟前';
+  if (diff < 86400000) return Math.floor(diff/3600000) + ' 时辰前';
+  if (diff < 7 * 86400000) return Math.floor(diff/86400000) + ' 日前';
+  return fmtTime(ts);
+}
+
+function getIconChar(node) {
+  if (node.type === 'folder') return '册';
+  if (node.type === 'image') return '画';
+  if (node.type === 'text') return '文';
+  return '物';
+}
+
+function debounce(fn, wait) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  };
+}
+
+function toast(title, msg, type = 'info') {
+  const area = document.getElementById('toast-area');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = `<div class="t-title">${title}</div><div class="t-msg">${msg}</div>`;
+  area.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function modal({ title, body, input, placeholder, defaultValue, onOk, okText = '允', cancelText = '罢' }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">${title}</div>
+      <div class="modal-body">
+        ${body || ''}
+        ${input ? `<input class="modal-input" type="text" placeholder="${placeholder || ''}" value="${defaultValue || ''}">` : ''}
+      </div>
+      <div class="modal-footer">
+        <button class="fm-btn cancel-btn">${cancelText}</button>
+        <button class="fm-btn primary ok-btn">${okText}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const inp = overlay.querySelector('.modal-input');
+  if (inp) { inp.focus(); inp.select(); }
+  const close = () => overlay.remove();
+  overlay.querySelector('.cancel-btn').onclick = close;
+  overlay.querySelector('.ok-btn').onclick = async () => {
+    const val = inp ? inp.value : true;
+    const result = onOk ? await onOk(val) : true;
+    if (result !== false) close();
+  };
+  if (inp) {
+    inp.onkeydown = (e) => {
+      if (e.key === 'Enter') overlay.querySelector('.ok-btn').click();
+      if (e.key === 'Escape') close();
+    };
+  }
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+}
+
+function confirm(title, msg, onOk) {
+  modal({ title, body: msg, onOk, okText: '允', cancelText: '罢' });
+}
+
+/* ============================================================
+   窗口管理
+   ============================================================ */
+class WindowManager {
+  static create({ id, title, width = 720, height = 480, x, y, content }) {
+    if (QingSi.windows[id]) {
+      this.activate(id);
+      return QingSi.windows[id];
+    }
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.id = 'win-' + id;
+    win.style.width = width + 'px';
+    win.style.height = height + 'px';
+    
+    // 恢复上次窗口位置
+    const saved = QingSi.prefs?.get('win:' + id);
+    if (saved) {
+      win.style.left = saved.x + 'px';
+      win.style.top = Math.max(38, saved.y) + 'px';
+      win.style.width = saved.w + 'px';
+      win.style.height = saved.h + 'px';
+    } else {
+      win.style.left = (x ?? (window.innerWidth - width) / 2 + (Object.keys(QingSi.windows).length * 30)) + 'px';
+      win.style.top = (y ?? (window.innerHeight - height) / 2 + (Object.keys(QingSi.windows).length * 30)) + 'px';
+    }
+    
+    win.innerHTML = `
+      <div class="window-titlebar">
+        <div class="window-controls">
+          <div class="window-btn close" data-act="close">×</div>
+          <div class="window-btn min" data-act="min">−</div>
+          <div class="window-btn max" data-act="max">□</div>
+        </div>
+        <div class="window-title" style="text-align:center">${title}</div>
+        <div style="width:60px"></div>
+      </div>
+      <div class="window-body"></div>
+      <div class="resize-handle"></div>
+    `;
+    
+    win.querySelector('.window-body').appendChild(content);
+    document.body.appendChild(win);
+    QingSi.windows[id] = { el: win, id, title };
+    
+    win.querySelector('[data-act="close"]').onclick = () => this.close(id);
+    win.querySelector('[data-act="max"]').onclick = () => this.maximize(id);
+    win.querySelector('[data-act="min"]').onclick = () => win.style.display = 'none';
+    
+    win.addEventListener('mousedown', () => this.activate(id));
+    
+    this._makeDraggable(win, id);
+    this._makeResizable(win, id);
+    this.activate(id);
+    
+    document.querySelector(`.dock-item[data-app="${id}"]`)?.classList.add('active');
+    return QingSi.windows[id];
+  }
+
+  static close(id) {
+    const w = QingSi.windows[id];
+    if (!w) return;
+    // 保存窗口位置
+    QingSi.prefs?.set('win:' + id, {
+      x: parseInt(w.el.style.left),
+      y: parseInt(w.el.style.top),
+      w: w.el.offsetWidth,
+      h: w.el.offsetHeight
+    });
+    w.el.style.transition = 'opacity 0.2s, transform 0.2s';
+    w.el.style.opacity = '0';
+    w.el.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      w.el.remove();
+      delete QingSi.windows[id];
+      document.querySelector(`.dock-item[data-app="${id}"]`)?.classList.remove('active');
+    }, 200);
+  }
+
+  static activate(id) {
+    Object.values(QingSi.windows).forEach(w => w.el.classList.remove('active'));
+    const w = QingSi.windows[id];
+    if (w) {
+      w.el.classList.add('active');
+      w.el.style.zIndex = ++QingSi.zIndex;
+      w.el.style.display = 'flex';
+    }
+  }
+
+  static maximize(id) {
+    const w = QingSi.windows[id];
+    if (!w) return;
+    if (w.el.dataset.maximized) {
+      const s = JSON.parse(w.el.dataset.maximized);
+      Object.assign(w.el.style, s);
+      delete w.el.dataset.maximized;
+    } else {
+      w.el.dataset.maximized = JSON.stringify({
+        left: w.el.style.left, top: w.el.style.top,
+        width: w.el.style.width, height: w.el.style.height
+      });
+      w.el.style.left = '0';
+      w.el.style.top = '38px';
+      w.el.style.width = '100vw';
+      w.el.style.height = 'calc(100vh - 38px - 80px)';
+    }
+  }
+
+  static _makeDraggable(win, id) {
+    const titlebar = win.querySelector('.window-titlebar');
+    let isDown = false, startX, startY, startLeft, startTop;
+    titlebar.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.window-btn')) return;
+      isDown = true;
+      startX = e.clientX; startY = e.clientY;
+      startLeft = parseInt(win.style.left); startTop = parseInt(win.style.top);
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      win.style.left = (startLeft + e.clientX - startX) + 'px';
+      win.style.top = Math.max(38, startTop + e.clientY - startY) + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (isDown && id) {
+        QingSi.prefs?.set('win:' + id, {
+          x: parseInt(win.style.left), y: parseInt(win.style.top),
+          w: win.offsetWidth, h: win.offsetHeight
+        });
+      }
+      isDown = false;
+    });
+  }
+
+  static _makeResizable(win, id) {
+    const handle = win.querySelector('.resize-handle');
+    let isDown = false, startX, startY, startW, startH;
+    handle.addEventListener('mousedown', (e) => {
+      isDown = true;
+      startX = e.clientX; startY = e.clientY;
+      startW = win.offsetWidth; startH = win.offsetHeight;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      win.style.width = Math.max(360, startW + e.clientX - startX) + 'px';
+      win.style.height = Math.max(240, startH + e.clientY - startY) + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (isDown && id) {
+        QingSi.prefs?.set('win:' + id, {
+          x: parseInt(win.style.left), y: parseInt(win.style.top),
+          w: win.offsetWidth, h: win.offsetHeight
+        });
+      }
+      isDown = false;
+    });
+  }
+}
+
+/* ============================================================
+   App: 文件管理器(四核加持)
+   ============================================================ */
+class FileManagerApp {
+  constructor() {
+    this.currentPath = '/';
+    this.viewMode = 'grid';
+    this.selected = new Set();
+    this.clipboard = null;
+  }
+
+  open() {
+    // 恢复上次状态
+    this.viewMode = QingSi.prefs?.get('fm:viewMode', 'grid');
+    this.currentPath = QingSi.prefs?.get('fm:lastPath', '/');
+    
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="fm-sidebar" id="fm-sidebar"></div>
+      <div class="fm-main">
+        <div class="fm-toolbar">
+          <button class="fm-btn" data-cmd="back">‹ 返</button>
+          <button class="fm-btn" data-cmd="up">↑ 上</button>
+          <input class="fm-path" id="fm-path" value="/" readonly>
+          <button class="fm-btn primary" data-cmd="newfolder">+ 新册</button>
+          <button class="fm-btn primary" data-cmd="newfile">+ 新笺</button>
+          <button class="fm-btn" data-cmd="upload">⇪ 拓</button>
+          <button class="fm-btn" data-cmd="view">视</button>
+          <input class="fm-search" id="fm-search" placeholder="觅...">
+        </div>
+        <div class="fm-content" id="fm-content"></div>
+        <div class="fm-statusbar">
+          <span id="fm-status">—</span>
+          <span id="fm-engine">—</span>
+        </div>
+      </div>
+    `;
+    
+    WindowManager.create({
+      id: 'files', title: '书阁 · 文件管理',
+      width: 880, height: 560, content: root
+    });
+    
+    this.refreshSidebar();
+    this.loadPath(this.currentPath);
+    this.bindEvents(root);
+    
+    document.getElementById('fm-engine').textContent = 
+      `${QingSi.cores.opfs ? '◆ OPFS' : '◇ IDB'} · ${QingSi.cores.ls ? '◇ LS缓存' : '○ 无缓存'} · ${QingSi.cores.ck ? '◇ Cookie' : ''}`;
+    
+    // 监听同步事件
+    if (!this._syncOff) {
+      this._syncOff = QingSi.sync?.on((evt) => {
+        if (evt.type.startsWith('fs:')) {
+          this.refresh();
+          toast('他窗变动', `${evt.type}: ${evt.payload.path || ''}`, 'sync');
+        }
+      });
+    }
+  }
+
+  bindEvents(root) {
+    root.querySelector('[data-cmd="back"]').onclick = () => this.goUp();
+    root.querySelector('[data-cmd="up"]').onclick = () => this.goUp();
+    root.querySelector('[data-cmd="newfolder"]').onclick = () => this.newFolder();
+    root.querySelector('[data-cmd="newfile"]').onclick = () => this.newFile();
+    root.querySelector('[data-cmd="upload"]').onclick = () => this.upload();
+    root.querySelector('[data-cmd="view"]').onclick = () => this.toggleView();
+    
+    const search = root.querySelector('#fm-search');
+    search.oninput = (e) => this.search(e.target.value);
+    
+    const content = root.querySelector('#fm-content');
+    content.oncontextmenu = (e) => {
+      if (e.target.closest('.fm-item, .fm-list-row')) return;
+      e.preventDefault();
+      this.showContextMenu(e.clientX, e.clientY, null);
+    };
+    
+    content.ondragover = (e) => { e.preventDefault(); content.style.background = 'rgba(122,139,111,0.08)'; };
+    content.ondragleave = () => content.style.background = '';
+    content.ondrop = async (e) => {
+      e.preventDefault();
+      content.style.background = '';
+      const files = e.dataTransfer.files;
+      for (const f of files) await this.uploadFile(f);
+      this.refresh();
+    };
+  }
+
+  async refreshSidebar() {
+    const sidebar = document.getElementById('fm-sidebar');
+    if (!sidebar) return;
+    sidebar.innerHTML = '';
+    
+    // 最近访问
+    const recent = QingSi.prefs?.getRecent() || [];
+    if (recent.length > 0) {
+      const h = document.createElement('h3');
+      h.textContent = '近日笔墨';
+      sidebar.appendChild(h);
+      for (const r of recent.slice(0, 5)) {
+        const item = document.createElement('div');
+        item.className = 'fm-recent-item';
+        item.innerHTML = `${QingSi.fs._basename(r.path)} <span style="float:right;opacity:0.5;">${fmtRelTime(r.ts)}</span>`;
+        item.title = r.path;
+        item.onclick = async () => {
+          const node = await QingSi.fs.getNode(r.path);
+          if (!node) { toast('错', '此笺已散', 'error'); return; }
+          if (node.type === 'folder') this.loadPath(r.path);
+          else this.openItem(r.path, node.type);
+        };
+        sidebar.appendChild(item);
+      }
+    }
+    
+    // 目录树
+    const h2 = document.createElement('h3');
+    h2.textContent = '书阁导览';
+    sidebar.appendChild(h2);
+    
+    const buildTree = async (path, depth = 0) => {
+      const children = await QingSi.fs.listChildren(path);
+      const folders = children.filter(c => c.type === 'folder').sort((a,b) => a.name.localeCompare(b.name));
+      for (const f of folders) {
+        const item = document.createElement('div');
+        item.className = 'fm-tree-item';
+        item.style.paddingLeft = (18 + depth * 14) + 'px';
+        if (f.path === this.currentPath) item.classList.add('active');
+        item.innerHTML = `<span class="arrow">▸</span> 册 ${f.name}`;
+        item.onclick = () => this.loadPath(f.path);
+        sidebar.appendChild(item);
+        await buildTree(f.path, depth + 1);
+      }
+    };
+    
+    const rootItem = document.createElement('div');
+    rootItem.className = 'fm-tree-item';
+    if (this.currentPath === '/') rootItem.classList.add('active');
+    rootItem.innerHTML = `<span class="arrow">▸</span> ⌂ 根目录`;
+    rootItem.onclick = () => this.loadPath('/');
+    sidebar.appendChild(rootItem);
+    
+    await buildTree('/', 1);
+  }
+
+  async loadPath(path) {
+    this.currentPath = path;
+    this.selected.clear();
+    document.getElementById('fm-path').value = path;
+    
+    // 优先尝试缓存,瞬时渲染
+    const cached = await QingSi.cache?.listCached(path);
+    if (cached) {
+      this.render(cached);
+      this._updateStatus(cached);
+    }
+    
+    // 真实数据后台加载
+    const children = await QingSi.fs.listChildren(path);
+    children.sort((a, b) => {
+      if (a.type === 'folder' && b.type !== 'folder') return -1;
+      if (a.type !== 'folder' && b.type === 'folder') return 1;
+      return a.name.localeCompare(b.name);
+    });
+    
+    // 缓存
+    QingSi.cache?.cacheList(path, children);
+    
+    // 如果数据有变化才重新渲染
+    if (!cached || JSON.stringify(cached.map(c => c.path)) !== JSON.stringify(children.map(c => c.path))) {
+      this.render(children);
+    }
+    this._updateStatus(children);
+    this.refreshSidebar();
+    
+    // 记住路径
+    QingSi.prefs?.set('fm:lastPath', path);
+  }
+
+  _updateStatus(children) {
+    const el = document.getElementById('fm-status');
+    if (el) {
+      el.textContent = `共 ${children.length} 项 · ${children.filter(c => c.type === 'folder').length} 册 · ${children.filter(c => c.type !== 'folder').length} 笺`;
+    }
+  }
+
+  render(items) {
+    const content = document.getElementById('fm-content');
+    if (!content) return;
+    if (items.length === 0) {
+      content.innerHTML = `
+        <div class="fm-empty">
+          <div class="big">空</div>
+          <div class="text">空空如也</div>
+          <div class="sub">— 此处寂寥,尚无笔墨痕迹 —</div>
+        </div>
+      `;
+      return;
+    }
+    
+    if (this.viewMode === 'grid') {
+      content.innerHTML = `<div class="fm-grid">${items.map(i => this.renderGridItem(i)).join('')}</div>`;
+    } else {
+      content.innerHTML = `
+        <div class="fm-list">
+          <div class="fm-list-header">
+            <div></div><div>名讳</div><div>大小</div><div>修改于</div><div>类</div>
+          </div>
+          ${items.map(i => this.renderListItem(i)).join('')}
+        </div>
+      `;
+    }
+    
+    content.querySelectorAll('.fm-item, .fm-list-row').forEach(el => {
+      const path = el.dataset.path;
+      el.onclick = (e) => {
+        if (!e.ctrlKey && !e.metaKey) this.selected.clear();
+        if (this.selected.has(path)) this.selected.delete(path);
+        else this.selected.add(path);
+        content.querySelectorAll('.selected').forEach(x => x.classList.remove('selected'));
+        this.selected.forEach(p => content.querySelector(`[data-path="${p}"]`)?.classList.add('selected'));
+      };
+      el.ondblclick = () => this.openItem(path, el.dataset.type);
+      el.oncontextmenu = (e) => {
+        e.preventDefault();
+        if (!this.selected.has(path)) {
+          this.selected.clear();
+          this.selected.add(path);
+          content.querySelectorAll('.selected').forEach(x => x.classList.remove('selected'));
+          el.classList.add('selected');
+        }
+        this.showContextMenu(e.clientX, e.clientY, path);
+      };
+    });
+  }
+
+  renderGridItem(item) {
+    return `
+      <div class="fm-item" data-path="${item.path}" data-type="${item.type}" title="${item.name}">
+        <div class="fi-icon">${getIconChar(item)}</div>
+        <div class="fi-name">${item.name}</div>
+        ${item.type !== 'folder' ? `<div class="fi-size">${fmtSize(item.size || 0)}</div>` : ''}
+      </div>
+    `;
+  }
+
+  renderListItem(item) {
+    return `
+      <div class="fm-list-row" data-path="${item.path}" data-type="${item.type}">
+        <div class="li-icon">${getIconChar(item)}</div>
+        <div>${item.name}</div>
+        <div>${item.type === 'folder' ? '—' : fmtSize(item.size || 0)}</div>
+        <div>${fmtTime(item.modified)}</div>
+        <div>${item.type === 'folder' ? '册' : item.type === 'image' ? '画' : item.type === 'text' ? '文' : '物'}</div>
+      </div>
+    `;
+  }
+
+  goUp() {
+    if (this.currentPath === '/') return;
+    this.loadPath(QingSi.fs._parentPath(this.currentPath));
+  }
+
+  async openItem(path, type) {
+    QingSi.prefs?.recordAccess(path);
+    if (type === 'folder') this.loadPath(path);
+    else if (type === 'text') EditorApp.openFile(path);
+    else if (type === 'image') ImageApp.openFile(path);
+    else this.download(path);
+  }
+
+  async newFolder() {
+    modal({
+      title: '新建册', body: '请赐以新册之名:',
+      input: true, placeholder: '册名',
+      onOk: async (name) => {
+        if (!name?.trim()) return false;
+        try {
+          await QingSi.fs.mkdir(QingSi.fs._join(this.currentPath, name.trim()));
+          toast('新册已立', name, 'success');
+          this.refresh();
+        } catch (e) { toast('创建失败', e.message, 'error'); return false; }
+      }
+    });
+  }
+
+  async newFile() {
+    modal({
+      title: '新建笺', body: '请赐以新笺之名(含后缀):',
+      input: true, defaultValue: '无题.txt',
+      onOk: async (name) => {
+        if (!name?.trim()) return false;
+        try {
+          await QingSi.fs.writeFile(QingSi.fs._join(this.currentPath, name.trim()), '');
+          toast('新笺已成', name, 'success');
+          this.refresh();
+        } catch (e) { toast('创建失败', e.message, 'error'); return false; }
+      }
+    });
+  }
+
+  upload() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = async () => {
+      for (const f of input.files) await this.uploadFile(f);
+      this.refresh();
+    };
+    input.click();
+  }
+
+  async uploadFile(file) {
+    try {
+      await QingSi.fs.writeFile(QingSi.fs._join(this.currentPath, file.name), file);
+      toast('已纳入', file.name, 'success');
+    } catch (e) { toast('上传失败', e.message, 'error'); }
+  }
+
+  async download(path) {
+    const blob = await QingSi.fs.readFile(path);
+    if (!blob) return toast('错', '无法读取', 'error');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = QingSi.fs._basename(path);
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  toggleView() {
+    this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
+    QingSi.prefs?.set('fm:viewMode', this.viewMode);
+    this.refresh();
+  }
+
+  refresh() {
+    this.loadPath(this.currentPath);
+  }
+
+  async search(q) {
+    if (!q.trim()) return this.refresh();
+    const results = await QingSi.fs.search(q);
+    this.render(results);
+    document.getElementById('fm-status').textContent = `搜得 ${results.length} 项`;
+  }
+
+  showContextMenu(x, y, path) {
+    document.querySelectorAll('.context-menu').forEach(m => m.remove());
+    const menu = document.createElement('div');
+    menu.className = 'context-menu';
+    
+    const items = [];
+    if (path) {
+      items.push({ label: '开启', icon: '◎', action: async () => {
+        const n = await QingSi.fs.getNode(path);
+        this.openItem(path, n.type);
+      }});
+      items.push({ label: '重命', icon: '✎', action: () => this.rename(path) });
+      items.push({ divider: true });
+      items.push({ label: '复', icon: '⎘', action: () => this.copy([path]) });
+      items.push({ label: '剪', icon: '✂', action: () => this.cut([path]) });
+      if (this.clipboard) items.push({ label: '贴', icon: '⊕', action: () => this.paste() });
+      items.push({ divider: true });
+      items.push({ label: '下载', icon: '↓', action: async () => {
+        const n = await QingSi.fs.getNode(path);
+        if (n.type !== 'folder') this.download(path);
+        else toast('提示', '册暂不支持直接下载', 'info');
+      }});
+      items.push({ divider: true });
+      items.push({ label: '弃', icon: '✕', action: () => this.delete([path]), danger: true });
+    } else {
+      items.push({ label: '新册', icon: '+', action: () => this.newFolder() });
+      items.push({ label: '新笺', icon: '+', action: () => this.newFile() });
+      items.push({ label: '上传', icon: '⇪', action: () => this.upload() });
+      if (this.clipboard) {
+        items.push({ divider: true });
+        items.push({ label: '贴', icon: '⊕', action: () => this.paste() });
+      }
+      items.push({ divider: true });
+      items.push({ label: '刷新', icon: '↻', action: () => this.refresh() });
+    }
+    
+    menu.innerHTML = items.map(i => 
+      i.divider ? '<div class="ctx-divider"></div>' :
+      `<div class="ctx-item ${i.danger ? 'danger' : ''}" data-act="${i.label}"><span style="opacity:0.5">${i.icon}</span> ${i.label}</div>`
+    ).join('');
+    
+    menu.style.left = Math.min(x, window.innerWidth - 180) + 'px';
+    menu.style.top = Math.min(y, window.innerHeight - 300) + 'px';
+    document.body.appendChild(menu);
+    
+    const realItems = items.filter(x => !x.divider);
+    menu.querySelectorAll('.ctx-item').forEach((el, i) => {
+      el.onclick = () => { realItems[i].action(); menu.remove(); };
+    });
+    
+    setTimeout(() => {
+      document.addEventListener('click', () => menu.remove(), { once: true });
+    }, 10);
+  }
+
+  async rename(path) {
+    const node = await QingSi.fs.getNode(path);
+    modal({
+      title: '改名', body: '请赐以新名:',
+      input: true, defaultValue: node.name,
+      onOk: async (newName) => {
+        if (!newName?.trim() || newName === node.name) return;
+        try {
+          await QingSi.fs.rename(path, newName.trim());
+          toast('已更', `${node.name} → ${newName}`, 'success');
+          this.refresh();
+        } catch (e) { toast('改名失败', e.message, 'error'); return false; }
+      }
+    });
+  }
+
+  copy(paths) {
+    this.clipboard = { action: 'copy', paths };
+    toast('已存', `${paths.length} 项已入怀`, 'info');
+  }
+
+  cut(paths) {
+    this.clipboard = { action: 'cut', paths };
+    toast('已剪', `${paths.length} 项待迁`, 'info');
+  }
+
+  async paste() {
+    if (!this.clipboard) return;
+    const { action, paths } = this.clipboard;
+    for (const p of paths) {
+      const name = QingSi.fs._basename(p);
+      let dest = QingSi.fs._join(this.currentPath, name);
+      let i = 1;
+      while (await QingSi.fs.exists(dest)) {
+        const dotIdx = name.lastIndexOf('.');
+        if (dotIdx > 0) {
+          dest = QingSi.fs._join(this.currentPath, name.substring(0, dotIdx) + ` (${i})` + name.substring(dotIdx));
+        } else dest = QingSi.fs._join(this.currentPath, name + ` (${i})`);
+        i++;
+      }
+      try {
+        if (action === 'copy') await QingSi.fs.copy(p, dest);
+        else await QingSi.fs.move(p, dest);
+      } catch (e) { toast('错', e.message, 'error'); }
+    }
+    if (action === 'cut') this.clipboard = null;
+    toast('已贴', '操作完成', 'success');
+    this.refresh();
+  }
+
+  async delete(paths) {
+    confirm('忍弃此物?', `欲弃 ${paths.length} 项,弃则不返。`, async () => {
+      for (const p of paths) {
+        try { await QingSi.fs.delete(p); }
+        catch (e) { toast('错', e.message, 'error'); }
+      }
+      toast('已弃', '昔物已散', 'info');
+      this.refresh();
+    });
+  }
+}
+
+const fileManager = new FileManagerApp();
+
+/* ============================================================
+   App: 编辑器(草稿恢复加持)
+   ============================================================ */
+const EditorApp = {
+  current: null,
+  saved: '',
+  
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="editor-toolbar">
+        <button class="fm-btn" id="ed-new">+ 新</button>
+        <button class="fm-btn" id="ed-open">开</button>
+        <button class="fm-btn primary" id="ed-save">藏</button>
+        <button class="fm-btn" id="ed-saveas">另藏</button>
+        <span class="editor-draft-indicator" id="ed-draft"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> 草稿已存</span>
+        <span class="editor-info" id="ed-info">未藏 · 0 字</span>
+      </div>
+      <textarea class="editor-textarea" id="ed-area" placeholder="此处落墨...&#10;&#10;墨迹无声,落处皆心。&#10;&#10;四核之一的疾风刃将每秒守护你的草稿,纵使断电关页,亦不丢字。"></textarea>
+    `;
+    WindowManager.create({
+      id: 'editor', title: '笔砚 · 文本编辑',
+      width: 720, height: 560, content: root
+    });
+    
+    const area = root.querySelector('#ed-area');
+    const info = root.querySelector('#ed-info');
+    const draftIndicator = root.querySelector('#ed-draft');
+    
+    // 自动暂存
+    const autoSave = debounce(() => {
+      if (this.current) {
+        QingSi.prefs?.saveDraft(this.current, area.value);
+        draftIndicator.classList.add('show');
+        setTimeout(() => draftIndicator.classList.remove('show'), 1500);
+      }
+    }, 500);
+    
+    area.oninput = () => {
+      info.textContent = `${this.current || '未藏'} · ${area.value.length} 字 ${this.current && area.value !== this.saved ? '· *' : ''}`;
+      autoSave();
+    };
+    
+    root.querySelector('#ed-new').onclick = () => {
+      this.current = null; area.value = ''; this.saved = '';
+      info.textContent = '未藏 · 0 字';
+    };
+    root.querySelector('#ed-save').onclick = () => this.save(area.value);
+    root.querySelector('#ed-saveas').onclick = () => this.saveAs(area.value);
+    root.querySelector('#ed-open').onclick = () => {
+      modal({
+        title: '开启笺', body: '请输入笺之路径:',
+        input: true, defaultValue: '/诗稿/江城子.txt',
+        onOk: async (path) => { await this.openFile(path); }
+      });
+    };
+  },
+  
+  async openFile(path) {
+    if (!QingSi.windows.editor) this.open();
+    setTimeout(async () => {
+      const text = await QingSi.fs.readFile(path, true);
+      if (text === null) return toast('错', '无此笺', 'error');
+      
+      const area = document.querySelector('#ed-area');
+      
+      // 检查草稿
+      const draft = QingSi.prefs?.getDraft(path);
+      if (draft && draft.content !== text) {
+        confirm('发现未存草稿', 
+          `此笺尚有 ${fmtRelTime(draft.ts)} 之未藏草稿,可恢复否?`, 
+          () => {
+            area.value = draft.content;
+            this.current = path;
+            this.saved = text;
+            document.querySelector('#ed-info').textContent = `${path} · ${draft.content.length} 字 · *`;
+            toast('草稿还魂', '昔日笔墨已重现', 'success');
+          });
+        // 取消则加载原文
+        setTimeout(() => {
+          if (area.value === '') {
+            area.value = text;
+            this.current = path;
+            this.saved = text;
+            document.querySelector('#ed-info').textContent = `${path} · ${text.length} 字`;
+          }
+        }, 100);
+      } else {
+        area.value = text;
+        this.current = path;
+        this.saved = text;
+        document.querySelector('#ed-info').textContent = `${path} · ${text.length} 字`;
+      }
+      
+      QingSi.prefs?.recordAccess(path);
+      WindowManager.activate('editor');
+    }, 50);
+  },
+  
+  async save(content) {
+    if (!this.current) return this.saveAs(content);
+    try {
+      await QingSi.fs.writeFile(this.current, content);
+      this.saved = content;
+      QingSi.prefs?.removeDraft(this.current);
+      document.querySelector('#ed-info').textContent = `${this.current} · ${content.length} 字`;
+      toast('藏好', this.current, 'success');
+    } catch (e) { toast('藏失败', e.message, 'error'); }
+  },
+  
+  saveAs(content) {
+    modal({
+      title: '另藏为', body: '请赐以路径:',
+      input: true, defaultValue: '/文档/未题.txt',
+      onOk: async (path) => {
+        try {
+          await QingSi.fs.writeFile(path, content);
+          this.current = path;
+          this.saved = content;
+          document.querySelector('#ed-info').textContent = `${path} · ${content.length} 字`;
+          toast('藏好', path, 'success');
+          if (QingSi.windows.files) fileManager.refresh();
+        } catch (e) { toast('藏失败', e.message, 'error'); return false; }
+      }
+    });
+  }
+};
+
+/* ============================================================
+   App: 图片
+   ============================================================ */
+const ImageApp = {
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="editor-toolbar">
+        <button class="fm-btn" id="im-open">开</button>
+        <span class="editor-info" id="im-info">未择 · —</span>
+      </div>
+      <div class="image-viewer" id="im-view">
+        <div style="font-family:'Ma Shan Zheng',cursive;color:#a8b89a;font-size:48px;letter-spacing:0.3em;text-align:center;">
+          画轩<br><span style="font-size:14px;letter-spacing:0.2em;">— 双击书阁中之画作以观 —</span>
+        </div>
+      </div>
+    `;
+    WindowManager.create({
+      id: 'image', title: '画轩 · 图像观赏',
+      width: 720, height: 560, content: root
+    });
+    root.querySelector('#im-open').onclick = () => {
+      modal({
+        title: '开启画作', input: true, defaultValue: '/图画/',
+        onOk: async (path) => this.openFile(path)
+      });
+    };
+  },
+  
+  async openFile(path) {
+    if (!QingSi.windows.image) this.open();
+    setTimeout(async () => {
+      const blob = await QingSi.fs.readFile(path);
+      if (!blob) return toast('错', '无此画', 'error');
+      const url = URL.createObjectURL(blob);
+      document.querySelector('#im-view').innerHTML = `<img src="${url}" alt="${path}">`;
+      document.querySelector('#im-info').textContent = `${path} · ${fmtSize(blob.size)}`;
+      QingSi.prefs?.recordAccess(path);
+      WindowManager.activate('image');
+    }, 50);
+  }
+};
+
+/* ============================================================
+   App: 终端(扩展四核命令)
+   ============================================================ */
+const TerminalApp = {
+  cwd: '/',
+  history: [],
+  histIdx: -1,
+  
+  open() {
+    // 恢复历史
+    this.history = QingSi.prefs?.get('term:history', []) || [];
+    
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `<div class="terminal-body" id="term-body"></div>`;
+    
+    WindowManager.create({
+      id: 'terminal', title: '符令 · 终端',
+      width: 680, height: 440, content: root
+    });
+    
+    const body = root.querySelector('#term-body');
+    this.body = body;
+    this.println('青丝 OS · 符令 v' + QingSi.version, 'ok');
+    this.println('四核纪元 · 输入 help 查看命令', 'dim');
+    this.println('');
+    this.prompt();
+    
+    body.onclick = () => {
+      const inp = body.querySelector('.terminal-input');
+      if (inp) inp.focus();
+    };
+  },
+  
+  println(text, cls = '') {
+    const line = document.createElement('div');
+    line.className = 'terminal-line';
+    if (cls) {
+      const span = document.createElement('span');
+      span.className = cls;
+      span.textContent = text;
+      line.appendChild(span);
+    } else line.textContent = text;
+    this.body.appendChild(line);
+    this.body.scrollTop = this.body.scrollHeight;
+  },
+  
+  prompt() {
+    const line = document.createElement('div');
+    line.className = 'terminal-line terminal-input-line';
+    line.innerHTML = `<span class="prompt">青丝</span><span class="path">${this.cwd}</span><span>›</span><input class="terminal-input" autofocus>`;
+    this.body.appendChild(line);
+    const inp = line.querySelector('.terminal-input');
+    inp.focus();
+    inp.onkeydown = async (e) => {
+      if (e.key === 'Enter') {
+        const cmd = inp.value;
+        inp.disabled = true;
+        line.querySelector('.terminal-input').replaceWith(document.createTextNode(cmd));
+        if (cmd.trim()) {
+          this.history.push(cmd);
+          QingSi.prefs?.set('term:history', this.history.slice(-50));
+          this.histIdx = this.history.length;
+          await this.exec(cmd);
+        }
+        this.prompt();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (this.histIdx > 0) { this.histIdx--; inp.value = this.history[this.histIdx]; }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (this.histIdx < this.history.length - 1) { this.histIdx++; inp.value = this.history[this.histIdx]; }
+        else { this.histIdx = this.history.length; inp.value = ''; }
+      }
+    };
+    this.body.scrollTop = this.body.scrollHeight;
+  },
+  
+  resolve(p) {
+    if (!p) return this.cwd;
+    if (p.startsWith('/')) return p === '/' ? '/' : p.replace(/\/+$/, '');
+    if (p === '..') return QingSi.fs._parentPath(this.cwd) || '/';
+    if (p === '.') return this.cwd;
+    return this.cwd === '/' ? '/' + p : this.cwd + '/' + p;
+  },
+  
+  async exec(cmdline) {
+    const parts = cmdline.trim().split(/\s+/);
+    const cmd = parts[0];
+    const args = parts.slice(1);
+    
+    try {
+      switch (cmd) {
+        case 'help':
+          this.println('━━━ 文件命令 ━━━', 'ok');
+          this.println('  ls / cd / pwd / cat / mkdir / touch / rm / cp / mv');
+          this.println('  echo <text> > <file>  / find <q> / tree [path]');
+          this.println('━━━ 系统命令 ━━━', 'ok');
+          this.println('  cores            — 查看四核状态');
+          this.println('  stat             — 存储统计');
+          this.println('  prefs [key val]  — 偏好读写');
+          this.println('  cookies          — 查看 cookie');
+          this.println('  drafts           — 查看草稿');
+          this.println('  recent           — 最近访问');
+          this.println('  clear / poem');
+          break;
+        case 'ls': {
+          const p = this.resolve(args[0]);
+          const items = await QingSi.fs.listChildren(p);
+          if (!items.length) { this.println('  (空)', 'dim'); break; }
+          for (const i of items.sort((a,b) => a.name.localeCompare(b.name))) {
+            const mark = i.type === 'folder' ? '/' : '';
+            const size = i.type === 'folder' ? '<DIR>' : fmtSize(i.size || 0);
+            this.println(`  ${size.padEnd(10)} ${i.name}${mark}`, i.type === 'folder' ? 'ok' : '');
+          }
+          break;
+        }
+        case 'cd': {
+          const p = this.resolve(args[0] || '/');
+          const node = await QingSi.fs.getNode(p);
+          if (!node) { this.println('  路径不存在', 'error'); break; }
+          if (node.type !== 'folder') { this.println('  非目录', 'error'); break; }
+          this.cwd = p;
+          break;
+        }
+        case 'pwd': this.println('  ' + this.cwd); break;
+        case 'cat': {
+          if (!args[0]) { this.println('  用法: cat <file>', 'error'); break; }
+          const text = await QingSi.fs.readFile(this.resolve(args[0]), true);
+          if (text === null) { this.println('  无此笺', 'error'); break; }
+          this.println(text);
+          break;
+        }
+        case 'mkdir':
+          if (!args[0]) { this.println('  用法: mkdir <path>', 'error'); break; }
+          await QingSi.fs.mkdir(this.resolve(args[0]));
+          this.println('  ✓ 已创建', 'ok');
+          break;
+        case 'touch':
+          if (!args[0]) { this.println('  用法: touch <file>', 'error'); break; }
+          await QingSi.fs.writeFile(this.resolve(args[0]), '');
+          this.println('  ✓ 已创建', 'ok');
+          break;
+        case 'rm':
+          if (!args[0]) { this.println('  用法: rm <path>', 'error'); break; }
+          await QingSi.fs.delete(this.resolve(args[0]));
+          this.println('  ✓ 已删除', 'ok');
+          break;
+        case 'cp':
+          if (args.length < 2) { this.println('  用法: cp <src> <dst>', 'error'); break; }
+          await QingSi.fs.copy(this.resolve(args[0]), this.resolve(args[1]));
+          this.println('  ✓ 已复制', 'ok');
+          break;
+        case 'mv':
+          if (args.length < 2) { this.println('  用法: mv <src> <dst>', 'error'); break; }
+          await QingSi.fs.move(this.resolve(args[0]), this.resolve(args[1]));
+          this.println('  ✓ 已移动', 'ok');
+          break;
+        case 'echo': {
+          const idx = args.indexOf('>');
+          if (idx > 0) {
+            const text = args.slice(0, idx).join(' ').replace(/^["']|["']$/g, '');
+            await QingSi.fs.writeFile(this.resolve(args[idx + 1]), text);
+            this.println('  ✓ 已写入', 'ok');
+          } else this.println('  ' + args.join(' '));
+          break;
+        }
+        case 'find': {
+          const q = args.join(' ');
+          if (!q) { this.println('  用法: find <query>', 'error'); break; }
+          const results = await QingSi.fs.search(q);
+          if (!results.length) this.println('  无所获', 'dim');
+          else for (const r of results) this.println('  ' + r.path);
+          break;
+        }
+        case 'cores':
+          this.println('━━━ 四核状态 ━━━', 'ok');
+          this.println(`  [剑] OPFS         ${QingSi.cores.opfs ? '✓ 启用' : '✗ 缺席'}`, QingSi.cores.opfs ? 'ok' : 'error');
+          this.println(`  [盾] IndexedDB    ${QingSi.cores.idb ? '✓ 启用' : '✗ 缺席'}`, QingSi.cores.idb ? 'ok' : 'error');
+          this.println(`  [刃] localStorage ${QingSi.cores.ls ? '✓ 启用' : '✗ 缺席'}`, QingSi.cores.ls ? 'ok' : 'error');
+          this.println(`  [笺] Cookie       ${QingSi.cores.ck ? '✓ 启用' : '✗ 缺席'}`, QingSi.cores.ck ? 'ok' : 'error');
+          break;
+        case 'stat': {
+          const s = await QingSi.fs.stats();
+          this.println(`  存储引擎: ${s.useOPFS ? 'OPFS + IDB' : 'IDB only'}`, 'ok');
+          this.println(`  文件: ${s.fileCount} · 文件夹: ${s.folderCount} · 总量: ${fmtSize(s.totalSize)}`);
+          if (s.quota) {
+            this.println(`  浏览器配额: ${fmtSize(s.quota.usage || 0)} / ${fmtSize(s.quota.quota || 0)}`);
+          }
+          const lsUsage = QingSi.prefs?.getUsage();
+          if (lsUsage) this.println(`  [刃] LS 占用: ${fmtSize(lsUsage.used)} (${lsUsage.items} 项)`);
+          break;
+        }
+        case 'prefs': {
+          if (args.length === 0) {
+            this.println('━━━ 偏好 ━━━', 'ok');
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && k.startsWith('qs:pref:')) {
+                this.println(`  ${k.slice(8)} = ${localStorage.getItem(k)}`);
+              }
+            }
+          } else if (args.length === 1) {
+            this.println(`  ${args[0]} = ${JSON.stringify(QingSi.prefs?.get(args[0]))}`);
+          } else {
+            QingSi.prefs?.set(args[0], args.slice(1).join(' '));
+            this.println('  ✓ 已设置', 'ok');
+          }
+          break;
+        }
+        case 'cookies': {
+          const cookies = QingSi.cookie?.listAll() || [];
+          if (!cookies.length) this.println('  无', 'dim');
+          else for (const c of cookies) this.println(`  ${c.name} = ${c.value}`);
+          break;
+        }
+        case 'drafts': {
+          const drafts = QingSi.prefs?.listDrafts() || [];
+          if (!drafts.length) this.println('  无未藏草稿', 'dim');
+          else for (const d of drafts) {
+            this.println(`  ${d.path} · ${d.content.length} 字 · ${fmtRelTime(d.ts)}`);
+          }
+          break;
+        }
+        case 'recent': {
+          const recent = QingSi.prefs?.getRecent() || [];
+          if (!recent.length) this.println('  无近日记录', 'dim');
+          else for (const r of recent) this.println(`  ${r.path} · ${fmtRelTime(r.ts)}`);
+          break;
+        }
+        case 'tree': {
+          await this.tree(this.resolve(args[0] || this.cwd), '');
+          break;
+        }
+        case 'clear': this.body.innerHTML = ''; break;
+        case 'poem': {
+          const poems = [
+            '【相思】红豆生南国,春来发几枝。愿君多采撷,此物最相思。',
+            '【静夜思】床前明月光,疑是地上霜。举头望明月,低头思故乡。',
+            '【鹿柴】空山不见人,但闻人语响。返景入深林,复照青苔上。',
+          ];
+          this.println('  ' + poems[Math.floor(Math.random() * poems.length)], 'ok');
+          break;
+        }
+        case '': break;
+        default: this.println('  未知命令: ' + cmd, 'error');
+      }
+    } catch (e) { this.println('  ✗ ' + e.message, 'error'); }
+  },
+  
+  async tree(path, prefix) {
+    const items = await QingSi.fs.listChildren(path);
+    items.sort((a,b) => a.name.localeCompare(b.name));
+    for (let i = 0; i < items.length; i++) {
+      const last = i === items.length - 1;
+      const item = items[i];
+      this.println(prefix + (last ? '└─ ' : '├─ ') + item.name + (item.type === 'folder' ? '/' : ''),
+        item.type === 'folder' ? 'ok' : '');
+      if (item.type === 'folder') await this.tree(item.path, prefix + (last ? '   ' : '│  '));
+    }
+  }
+};
+
+/* ============================================================
+   App: 仓廪(四核可视化)
+   ============================================================ */
+const StorageApp = {
+  async open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;width:100%;height:100%;';
+    root.innerHTML = `<div class="storage-panel" id="storage-panel">载入中...</div>`;
+    WindowManager.create({
+      id: 'storage', title: '仓廪 · 四核全景',
+      width: 700, height: 600, content: root
+    });
+    this.refresh();
+  },
+  
+  async refresh() {
+    const panel = document.getElementById('storage-panel');
+    if (!panel) return;
+    const s = await QingSi.fs.stats();
+    const usedRatio = s.quota ? (s.quota.usage / s.quota.quota * 100) : 0;
+    const lsUsage = QingSi.prefs?.getUsage() || { used: 0, items: 0 };
+    const cookies = QingSi.cookie?.listAll() || [];
+    const drafts = QingSi.prefs?.listDrafts() || [];
+    const recent = QingSi.prefs?.getRecent() || [];
+    
+    panel.innerHTML = `
+      <div class="storage-card">
+        <h3>四核状态 · QuadCore</h3>
+        <div class="core-card">
+          <div class="core-item ${QingSi.cores.opfs ? 'active' : 'off'}">
+            <div class="core-name"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 7l4 4"/></svg> 真文剑 · OPFS</div>
+            <div class="core-status-text">${QingSi.cores.opfs ? '已启用 · 真实文件落盘' : '未启用 · IDB 兜底'}</div>
+            <div class="core-desc">原生文件系统 API,承载二进制大文件,GB 级容量</div>
+          </div>
+          <div class="core-item ${QingSi.cores.idb ? 'active' : 'off'}">
+            <div class="core-name"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> 索引盾 · IndexedDB</div>
+            <div class="core-status-text">已启用 · ${s.fileCount + s.folderCount} 节点</div>
+            <div class="core-desc">结构化元数据,索引查询,跨平台兼容</div>
+          </div>
+          <div class="core-item ${QingSi.cores.ls ? 'active' : 'off'}">
+            <div class="core-name"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> 疾风刃 · localStorage</div>
+            <div class="core-status-text">${QingSi.cores.ls ? `已启用 · ${lsUsage.items} 项 · ${fmtSize(lsUsage.used)}` : '未启用'}</div>
+            <div class="core-desc">同步极速,缓存/草稿/偏好/跨标签同步</div>
+          </div>
+          <div class="core-item ${QingSi.cores.ck ? 'active' : 'warn'}">
+            <div class="core-name"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 羽信笺 · Cookie</div>
+            <div class="core-status-text">${QingSi.cores.ck ? `已启用 · ${cookies.length} 条` : '未启用'}</div>
+            <div class="core-desc">身份/过期/跨域,4KB 精简轻量</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="storage-card">
+        <h3>浏览器配额</h3>
+        <div class="storage-bar">
+          <div class="storage-bar-fill" style="width:${usedRatio}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-family:monospace;">
+          <span>已用: ${s.quota ? fmtSize(s.quota.usage || 0) : '—'}</span>
+          <span>${usedRatio.toFixed(2)}%</span>
+          <span>总配额: ${s.quota ? fmtSize(s.quota.quota || 0) : '—'}</span>
+        </div>
+      </div>
+
+      <div class="storage-card">
+        <h3>文件统计</h3>
+        <div class="storage-stats">
+          <div class="storage-stat"><span class="num">${s.fileCount}</span><span class="lbl">笺数</span></div>
+          <div class="storage-stat"><span class="num">${s.folderCount}</span><span class="lbl">册数</span></div>
+          <div class="storage-stat"><span class="num">${fmtSize(s.totalSize)}</span><span class="lbl">总量</span></div>
+          <div class="storage-stat"><span class="num">${drafts.length}</span><span class="lbl">草稿</span></div>
+        </div>
+      </div>
+
+      <div class="storage-card">
+        <h3>类型分布</h3>
+        <div class="storage-stats">
+          <div class="storage-stat"><span class="num">${s.typeCount.text || 0}</span><span class="lbl">文 · 文本</span></div>
+          <div class="storage-stat"><span class="num">${s.typeCount.image || 0}</span><span class="lbl">画 · 图像</span></div>
+          <div class="storage-stat"><span class="num">${s.typeCount.binary || 0}</span><span class="lbl">物 · 二进制</span></div>
+        </div>
+      </div>
+
+      <div class="storage-card">
+        <h3>四核活动</h3>
+        <div style="font-size:12px;color:var(--ink-soft);line-height:1.9;">
+          <div>[刃] 最近访问:<strong style="color:var(--rust);">${recent.length}</strong> 项</div>
+          <div>[刃] 暂存草稿:<strong style="color:var(--rust);">${drafts.length}</strong> 份 ${drafts.length ? `(最新于 ${fmtRelTime(Math.max(...drafts.map(d => d.ts)))})` : ''}</div>
+          <div>[笺] Cookie:<strong style="color:var(--rust);">${cookies.length}</strong> 条 ${cookies.map(c => c.name).join('、')}</div>
+        </div>
+      </div>
+
+      <div class="storage-card">
+        <h3>操作</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="fm-btn" onclick="StorageApp.refresh()">↻ 刷新</button>
+          <button class="fm-btn" onclick="StorageApp.export()">↓ 导出全部</button>
+          <button class="fm-btn" onclick="StorageApp.clearCache()">清空缓存</button>
+          <button class="fm-btn danger" onclick="StorageApp.purge()">✕ 清空文件</button>
+          <button class="fm-btn danger" onclick="StorageApp.purgeAll()">✕ 完全重置</button>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--ink-soft);font-style:italic;">
+          清空操作不可恢复 — 三思而行。
+        </div>
+      </div>
+    `;
+  },
+  
+  async export() {
+    const all = await QingSi.fs.getAllNodes();
+    const data = { 
+      version: QingSi.version, exportedAt: Date.now(), 
+      nodes: [], prefs: {}, cookies: QingSi.cookie?.listAll() || []
+    };
+    for (const n of all) {
+      if (n.type === 'folder') data.nodes.push({ ...n, content: null });
+      else {
+        const blob = await QingSi.fs.readFile(n.path);
+        const text = blob ? await blob.text().catch(() => null) : null;
+        data.nodes.push({ ...n, content: text });
+      }
+    }
+    // 收集 prefs
+    if (QingSi.prefs?.available) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('qs:pref:')) data.prefs[k.slice(8)] = localStorage.getItem(k);
+      }
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `qingsi-backup-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('导出', '四核全部资料已导出', 'success');
+  },
+  
+  clearCache() {
+    QingSi.cache?.invalidateAll();
+    toast('已清', '缓存已洗',  'info');
+    this.refresh();
+  },
+  
+  purge() {
+    confirm('清空文件?', '所有文件与目录将被永久删除。', async () => {
+      const all = await QingSi.fs.getAllNodes();
+      for (const n of all) {
+        if (n.path !== '/') await QingSi.fs._deleteNodeMeta(n.path).catch(() => {});
+      }
+      QingSi.fs._tx(['blobs'], 'readwrite').objectStore('blobs').clear();
+      if (QingSi.fs.useOPFS) {
+        for await (const [name] of QingSi.fs.opfsRoot.entries()) {
+          await QingSi.fs.opfsRoot.removeEntry(name, { recursive: true }).catch(() => {});
+        }
+      }
+      toast('已清', '万物归零', 'info');
+      this.refresh();
+      if (QingSi.windows.files) fileManager.refresh();
+    });
+  },
+  
+  purgeAll() {
+    confirm('完全重置?', '将清空文件、偏好、草稿、Cookie 一切痕迹。', async () => {
+      await this.purge();
+      QingSi.prefs?.purgeAll();
+      QingSi.cookie?.purgeAll();
+      toast('已尽', '青丝重归空无', 'info');
+      setTimeout(() => location.reload(), 1500);
+    });
+  }
+};
+
+/* ============================================================
+   App: 诗笺
+   ============================================================ */
+const PoemApp = {
+  poems: [
+    { title: '江城子', author: '— 苏轼 —', text: '十年生死两茫茫<br>不思量,自难忘<br>千里孤坟,无处话凄凉<br>纵使相逢应不识<br>尘满面,鬓如霜' },
+    { title: '声声慢', author: '— 李清照 —', text: '寻寻觅觅<br>冷冷清清<br>凄凄惨惨戚戚<br>乍暖还寒时候<br>最难将息' },
+    { title: '青玉案', author: '— 辛弃疾 —', text: '众里寻他千百度<br>蓦然回首<br>那人却在<br>灯火阑珊处' },
+    { title: '相见欢', author: '— 李煜 —', text: '林花谢了春红<br>太匆匆<br>无奈朝来寒雨<br>晚来风' },
+  ],
+  idx: 0,
+  
+  open() {
+    this.idx = QingSi.prefs?.get('poem:idx', 0) || 0;
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;width:100%;height:100%;';
+    root.innerHTML = `<div class="poem-panel"><div class="poem-scroll" id="poem-scroll"></div></div>`;
+    WindowManager.create({
+      id: 'poem', title: '诗笺 · 一笺旧梦',
+      width: 600, height: 500, content: root
+    });
+    this.render();
+    document.getElementById('poem-scroll').onclick = () => {
+      this.idx = (this.idx + 1) % this.poems.length;
+      QingSi.prefs?.set('poem:idx', this.idx);
+      this.render();
+    };
+  },
+  
+  render() {
+    const scroll = document.getElementById('poem-scroll');
+    const p = this.poems[this.idx];
+    scroll.style.opacity = 0;
+    setTimeout(() => {
+      scroll.innerHTML = `
+        <div class="poem-title">${p.title}</div>
+        <div class="poem-text">${p.text}</div>
+        <div class="poem-author">${p.author}</div>
+        <div style="margin-top:30px;font-size:11px;color:var(--ink-soft);opacity:0.5;letter-spacing:0.2em;">轻触换笺</div>
+      `;
+      scroll.style.transition = 'opacity 0.5s';
+      scroll.style.opacity = 1;
+    }, 200);
+  }
+};
+
+/* ============================================================
+   App: 设阁(偏好管理)
+   ============================================================ */
+const SettingsApp = {
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;width:100%;height:100%;';
+    root.innerHTML = `<div class="settings-panel" id="settings-panel"></div>`;
+    WindowManager.create({
+      id: 'settings', title: '设阁 · 偏好',
+      width: 600, height: 540, content: root
+    });
+    this.render();
+  },
+  
+  render() {
+    const panel = document.getElementById('settings-panel');
+    const userName = QingSi.cookie?.get('user_name') || '青丝主人';
+    const autoDraft = QingSi.prefs?.get('autoDraft', true);
+    const showWelcome = QingSi.prefs?.get('showWelcome', false);
+    const syncTabs = QingSi.prefs?.get('syncTabs', true);
+    
+    panel.innerHTML = `
+      <div class="settings-section">
+        <h3>身份 · Cookie 守护</h3>
+        <div class="settings-row">
+          <div>
+            <div class="label">您的名号</div>
+            <div class="desc">由羽信笺保管,可跨子域共享</div>
+          </div>
+          <input class="modal-input" id="set-name" value="${userName}" style="width:200px;margin-top:0;">
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">忘记我</div>
+            <div class="desc">清除身份 cookie</div>
+          </div>
+          <button class="fm-btn danger" id="set-forget">忘</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>体验 · localStorage 守护</h3>
+        <div class="settings-row">
+          <div>
+            <div class="label">自动暂存草稿</div>
+            <div class="desc">笔砚每秒备份未保存内容</div>
+          </div>
+          <div class="toggle ${autoDraft ? 'on' : ''}" id="set-draft"></div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">跨标签同步</div>
+            <div class="desc">多窗口实时联动</div>
+          </div>
+          <div class="toggle ${syncTabs ? 'on' : ''}" id="set-sync"></div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">下次显示欢迎语</div>
+            <div class="desc">由 cookie 控制是否再次问候</div>
+          </div>
+          <div class="toggle ${showWelcome ? 'on' : ''}" id="set-welcome"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>视图 · 偏好持久</h3>
+        <div class="settings-row">
+          <div>
+            <div class="label">书阁默认视图</div>
+            <div class="desc">网格 / 列表</div>
+          </div>
+          <button class="fm-btn" id="set-view">${QingSi.prefs?.get('fm:viewMode', 'grid') === 'grid' ? '网格' : '列表'}</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">清空所有偏好</div>
+            <div class="desc">重置 localStorage 中的青丝数据</div>
+          </div>
+          <button class="fm-btn danger" id="set-purge-prefs">清</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>关于 · 四核纪元</h3>
+        <div style="font-size:13px;color:var(--ink-soft);line-height:2;font-family:'Noto Serif SC',serif;">
+          青丝 OS · v${QingSi.version}<br>
+          四核架构 · OPFS + IndexedDB + localStorage + Cookie<br>
+          <em style="color:var(--rust);">"一缕青丝,万千旧梦。"</em>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('set-name').onchange = (e) => {
+      QingSi.cookie?.set('user_name', e.target.value);
+      toast('已记', e.target.value, 'success');
+      updateGreeting();
+    };
+    document.getElementById('set-forget').onclick = () => {
+      QingSi.cookie?.remove('user_name');
+      toast('已忘', '身份散去', 'info');
+      this.render();
+      updateGreeting();
+    };
+    document.getElementById('set-draft').onclick = (e) => {
+      const cur = QingSi.prefs?.get('autoDraft', true);
+      QingSi.prefs?.set('autoDraft', !cur);
+      e.target.classList.toggle('on');
+    };
+    document.getElementById('set-sync').onclick = (e) => {
+      const cur = QingSi.prefs?.get('syncTabs', true);
+      QingSi.prefs?.set('syncTabs', !cur);
+      e.target.classList.toggle('on');
+    };
+    document.getElementById('set-welcome').onclick = (e) => {
+      const cur = QingSi.prefs?.get('showWelcome', false);
+      QingSi.prefs?.set('showWelcome', !cur);
+      QingSi.cookie?.remove('welcomed');
+      e.target.classList.toggle('on');
+      toast('已设', '下次开启时验证', 'info');
+    };
+    document.getElementById('set-view').onclick = (e) => {
+      const cur = QingSi.prefs?.get('fm:viewMode', 'grid');
+      const next = cur === 'grid' ? 'list' : 'grid';
+      QingSi.prefs?.set('fm:viewMode', next);
+      e.target.textContent = next === 'grid' ? '网格' : '列表';
+      if (QingSi.windows.files) { fileManager.viewMode = next; fileManager.refresh(); }
+    };
+    document.getElementById('set-purge-prefs').onclick = () => {
+      confirm('清空偏好?', '所有自定义设置将丢失。', () => {
+        QingSi.prefs?.purgeAll();
+        toast('已清', '偏好归零', 'info');
+        setTimeout(() => location.reload(), 800);
+      });
+    };
+  }
+};
+
+/* ============================================================
+   桌面交互 + 时钟 + 欢迎语
+   ============================================================ */
+function startClock() {
+  const clock = document.getElementById('clock');
+  const solar = document.getElementById('solar');
+  const update = () => {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    clock.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const months = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'];
+    solar.textContent = months[d.getMonth()] + ' · ' + d.getDate() + '日';
+  };
+  update();
+  setInterval(update, 1000);
+}
+
+function updateGreeting() {
+  const name = QingSi.cookie?.get('user_name');
+  const greet = document.getElementById('greeting');
+  if (name && greet) {
+    const h = new Date().getHours();
+    const period = h < 6 ? '夜深' : h < 11 ? '早安' : h < 14 ? '午时' : h < 18 ? '午后' : h < 22 ? '晚安' : '夜深';
+    greet.textContent = `${period},${name}`;
+  } else if (greet) {
+    greet.textContent = '';
+  }
+}
+
+function spawnPetals() {
+  setInterval(() => {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (8 + Math.random() * 8) + 's';
+    p.style.background = ['#7a8b6f', '#a8553a', '#6b3a4a'][Math.floor(Math.random() * 3)];
+    document.getElementById('desktop').appendChild(p);
+    setTimeout(() => p.remove(), 16000);
+  }, 2500);
+}
+
+function bindAppLaunchers() {
+  const launch = (app) => {
+    switch (app) {
+      case 'files': fileManager.open(); break;
+      case 'editor': EditorApp.open(); break;
+      case 'image': ImageApp.open(); break;
+      case 'terminal': TerminalApp.open(); break;
+      case 'storage': StorageApp.open(); break;
+      case 'poem': PoemApp.open(); break;
+      case 'settings': SettingsApp.open(); break;
+    }
+  };
+  document.querySelectorAll('.desk-icon').forEach(el => {
+    el.ondblclick = () => launch(el.dataset.app);
+  });
+  document.querySelectorAll('.dock-item').forEach(el => {
+    el.onclick = () => launch(el.dataset.app);
+  });
+}
+
+async function updateStorageMeta() {
+  const s = await QingSi.fs.stats();
+  document.getElementById('storage-meta').textContent = 
+    `${s.fileCount} 笺 · ${fmtSize(s.totalSize)}`;
+}
+
+function updateCoreLights() {
+  ['opfs','idb','ls','ck'].forEach(c => {
+    const el = document.getElementById('core-' + c);
+    if (el) el.classList.toggle('active', QingSi.cores[c]);
+  });
+}
+
+function showWelcomeIfNeeded() {
+  // 第一次访问 / 主动设置显示
+  const welcomed = QingSi.cookie?.hasOnce('welcomed');
+  const showAlways = QingSi.prefs?.get('showWelcome', false);
+  
+  if (welcomed && !showAlways) return;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'welcome-overlay';
+  overlay.innerHTML = `
+    <div class="welcome-card">
+      <h1>青丝</h1>
+      <div class="sub">— 四核纪元 · QuadCore —</div>
+      <div class="desc">
+        欢迎来到 青丝 OS。<br><br>
+        此系统由<strong>四位剑客</strong>共同守护:
+        <strong style="color:var(--rust);">真文剑、索引盾、疾风刃、羽信笺</strong>。<br><br>
+        请赐尊号,以便青丝铭记于心:
+      </div>
+      <input class="name-input" id="welcome-name" placeholder="请赐尊号..." value="青丝主人">
+      <button class="fm-btn primary" id="welcome-ok" style="width:100%;padding:10px;">入此青丝之境</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  
+  const inp = overlay.querySelector('#welcome-name');
+  inp.focus(); inp.select();
+  
+  const submit = () => {
+    const name = inp.value.trim() || '青丝主人';
+    QingSi.cookie?.set('user_name', name, { maxAge: 31536000 });
+    QingSi.cookie?.markOnce('welcomed', 365);
+    overlay.style.opacity = 0;
+    overlay.style.transition = 'opacity 0.5s';
+    setTimeout(() => overlay.remove(), 500);
+    updateGreeting();
+    toast('记下了', `${name},一切都为你而设`, 'success');
+  };
+  
+  overlay.querySelector('#welcome-ok').onclick = submit;
+  inp.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+}
+
+/* ============================================================
+   启动流程
+   ============================================================ */
+window.fileManager = fileManager;
+window.EditorApp = EditorApp;
+window.ImageApp = ImageApp;
+window.TerminalApp = TerminalApp;
+window.StorageApp = StorageApp;
+window.PoemApp = PoemApp;
+window.SettingsApp = SettingsApp;
+window.QingSi = QingSi;
+
+(async function bootstrap() {
+  // 先点亮疾风刃和羽信笺(同步可用)
+  QingSi.prefs = new PrefsManager();
+  QingSi.cookie = new CookieManager();
+  QingSi.cores.ls = QingSi.prefs.available;
+  QingSi.cores.ck = QingSi.cookie.available;
+  QingSi.sync = new SyncManager();
+  
+  document.getElementById('sc-3').classList.add('lit');
+  await new Promise(r => setTimeout(r, 200));
+  document.getElementById('sc-4').classList.add('lit');
+  await new Promise(r => setTimeout(r, 200));
+  
+  // 初始化主从核
+  QingSi.fs = new HybridFS();
+  await QingSi.fs.init();
+  QingSi.cache = new CacheCoordinator(QingSi.prefs);
+  
+  document.getElementById('sc-2').classList.add('lit');
+  await new Promise(r => setTimeout(r, 200));
+  if (QingSi.cores.opfs) document.getElementById('sc-1').classList.add('lit');
+  
+  startClock();
+  updateGreeting();
+  spawnPetals();
+  bindAppLaunchers();
+  updateStorageMeta();
+  updateCoreLights();
+  setInterval(updateStorageMeta, 5000);
+  
+  // 全局同步监听
+  QingSi.sync.on((evt) => {
+    console.log('[sync]', evt);
+    if (evt.type === 'fs:written' || evt.type === 'fs:created' || evt.type === 'fs:deleted') {
+      updateStorageMeta();
+    }
+  });
+  
+  // 关闭启动屏
+  setTimeout(() => {
+    const splash = document.getElementById('splash');
+    splash.style.opacity = 0;
+    setTimeout(() => {
+      splash.remove();
+      showWelcomeIfNeeded();
+    }, 800);
+  }, 1800);
+  
+  console.log('%c 青丝 OS · 四核纪元 ', 'background:#1c1a17;color:#b08a4a;padding:10px 30px;font-size:20px;font-family:serif;letter-spacing:0.5em;');
+  console.log('%c [剑] OPFS  [盾] IndexedDB  [刃] localStorage  [笺] Cookie ', 'color:#7a8b6f;font-style:italic;letter-spacing:0.2em;');
+  console.log('%c 「四核合璧,可纳乾坤,可守记忆,可通万域,可越时光。」', 'color:#a8553a;font-style:italic;');
+})();
+</script>
+
+</body>
+</html>
