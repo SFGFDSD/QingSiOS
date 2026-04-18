@@ -2,9 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231c1a17'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='serif' font-size='40' font-weight='400' fill='%23b08a4a'%3E青%3C/text%3E%3C/svg%3E">
 <title>青丝 · QingSi OS · 四核纪元</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
 
@@ -22,12 +23,49 @@
   --jade: #5d7a6f;
   --cinnabar: #c44a3a;
   --shadow: rgba(28, 26, 23, 0.15);
+  --surface-text: #ebe2d0;
+  --surface-bg: #1c1a17;
+  --surface-bg-soft: #3a3530;
+  --overlay-bg: rgba(28, 26, 23, 0.85);
+  --hover-bg: rgba(28, 26, 23, 0.08);
+  --border-subtle: rgba(28, 26, 23, 0.15);
+  --text-shadow-light: 0 1px 2px rgba(235, 226, 208, 0.8);
+}
+
+[data-theme="dark"] {
+  --ink: #e8e2d6;
+  --ink-soft: #b8b0a0;
+  --paper: #1a1816;
+  --paper-deep: #242119;
+  --willow: #8a9b7f;
+  --willow-deep: #6a7a5f;
+  --willow-mist: #b8c8aa;
+  --rust: #c4654a;
+  --plum: #8b4a5a;
+  --gold: #d4a85a;
+  --jade: #6d8a7f;
+  --cinnabar: #d45a4a;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --surface-text: #e8e2d6;
+  --surface-bg: #0f0e0c;
+  --surface-bg-soft: #2a2520;
+  --overlay-bg: rgba(0, 0, 0, 0.85);
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-shadow-light: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+[data-font="inter"] {
+  --body-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+[data-font="system"] {
+  --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;
-  font-family: 'Noto Serif SC', 'Songti SC', serif;
+  font-family: var(--body-font, 'Noto Serif SC', 'Songti SC', serif);
   color: var(--ink);
   background: var(--paper);
   cursor: default;
@@ -42,6 +80,13 @@ html, body {
   overflow: hidden;
 }
 
+[data-theme="dark"] #desktop {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(106, 122, 95, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(212, 168, 90, 0.08) 0%, transparent 60%),
+    linear-gradient(170deg, #141210 0%, #1a1816 40%, #12100e 100%);
+}
+
 #desktop::before {
   content: '';
   position: absolute; inset: 0;
@@ -49,6 +94,11 @@ html, body {
   opacity: 0.35;
   pointer-events: none;
   mix-blend-mode: multiply;
+}
+
+[data-theme="dark"] #desktop::before {
+  mix-blend-mode: soft-light;
+  opacity: 0.25;
 }
 
 .willow-branch {
@@ -66,14 +116,6 @@ html, body {
 @keyframes sway {
   0%, 100% { transform: rotate(-2deg); }
   50% { transform: rotate(3deg); }
-}
-
-.mountain {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 30%;
-  pointer-events: none;
-  opacity: 0.18;
 }
 
 .petal {
@@ -101,7 +143,7 @@ html, body {
   justify-content: space-between;
   padding: 0 28px;
   background: linear-gradient(180deg, rgba(28,26,23,0.92), rgba(28,26,23,0.85));
-  color: var(--paper);
+  color: var(--surface-text);
   font-size: 12px;
   letter-spacing: 0.15em;
   z-index: 1000;
@@ -169,7 +211,7 @@ html, body {
 }
 
 .desk-icon:hover {
-  background: rgba(28, 26, 23, 0.08);
+  background: var(--hover-bg);
 }
 
 .desk-icon .ico {
@@ -179,8 +221,8 @@ html, body {
   justify-content: center;
   font-family: 'Ma Shan Zheng', cursive;
   font-size: 28px;
-  color: var(--paper);
-  background: linear-gradient(135deg, var(--ink-soft), var(--ink));
+  color: var(--surface-text);
+  background: linear-gradient(135deg, var(--surface-bg-soft), var(--surface-bg));
   border: 1px solid var(--gold);
   box-shadow: 0 4px 12px var(--shadow), inset 0 1px 0 rgba(176,138,74,0.3);
   border-radius: 2px;
@@ -200,14 +242,14 @@ html, body {
   color: var(--ink);
   font-family: 'ZCOOL XiaoWei', serif;
   letter-spacing: 0.1em;
-  text-shadow: 0 1px 2px rgba(235, 226, 208, 0.8);
+  text-shadow: var(--text-shadow-light);
 }
 
 .window {
   position: absolute;
   background: var(--paper);
   border: 1px solid var(--ink);
-  box-shadow: 
+  box-shadow:
     0 20px 60px rgba(28, 26, 23, 0.35),
     0 0 0 1px rgba(176, 138, 74, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -216,22 +258,80 @@ html, body {
   min-width: 360px;
   min-height: 240px;
   border-radius: 2px;
-  overflow: hidden;
+  overflow: visible;
   z-index: 100;
+  transform-origin: center top;
 }
 
 .window.active { z-index: 500; }
 
+/* ── 窗口卷轴开合动画 ── */
+@keyframes scrollOpen {
+  0% {
+    clip-path: inset(50% 0 50% 0);
+    opacity: 0.3;
+    filter: blur(2px);
+  }
+  30% {
+    clip-path: inset(42% 0 42% 0);
+    opacity: 0.6;
+    filter: blur(1px);
+  }
+  60% {
+    clip-path: inset(15% 0 15% 0);
+    opacity: 0.9;
+    filter: blur(0px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@keyframes scrollClose {
+  0% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  40% {
+    clip-path: inset(15% 0 15% 0);
+    opacity: 0.9;
+    filter: blur(0px);
+  }
+  70% {
+    clip-path: inset(42% 0 42% 0);
+    opacity: 0.5;
+    filter: blur(1.5px);
+  }
+  100% {
+    clip-path: inset(50% 0 50% 0);
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+.window.scroll-opening {
+  animation: scrollOpen 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.window.scroll-closing {
+  animation: scrollClose 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  pointer-events: none;
+}
+
 .window-titlebar {
   height: 36px;
-  background: linear-gradient(180deg, var(--ink) 0%, var(--ink-soft) 100%);
-  color: var(--paper);
+  background: linear-gradient(180deg, var(--surface-bg) 0%, var(--surface-bg-soft) 100%);
+  color: var(--surface-text);
   display: flex;
   align-items: center;
   padding: 0 14px;
   cursor: move;
   border-bottom: 1px solid var(--gold);
   position: relative;
+  touch-action: none;
 }
 
 .window-titlebar::after {
@@ -245,34 +345,180 @@ html, body {
 .window-title {
   font-family: 'Ma Shan Zheng', cursive;
   font-size: 16px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.3em;
   color: var(--gold);
-  flex: 1;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(28,26,23,0.5);
 }
 
 .window-controls {
   display: flex;
   gap: 8px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
-.window-btn {
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  border: 1px solid rgba(235, 226, 208, 0.3);
+/* ── 卷轴按钮 ── */
+.window-scroll {
+  width: 36px;
+  height: 28px;
+  position: relative;
   cursor: pointer;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(28,26,23,0.3));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s;
+}
+.window-scroll:hover {
+  transform: scale(1.15);
+  filter: drop-shadow(0 2px 6px rgba(28,26,23,0.4));
+}
+.window-scroll:active {
+  transform: scale(0.92);
+}
+
+.scroll-outer-label {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Ma Shan Zheng', cursive;
   font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+}
+.window-scroll:hover .scroll-outer-label {
+  opacity: 1;
+}
+
+/* 卷轴纸面 */
+.scroll-paper {
+  position: absolute;
+  left: 7px; right: 7px;
+  top: 5px; bottom: 5px;
+  background: linear-gradient(180deg, #e8dcc4, #ddd1b6, #e8dcc4);
+  border-radius: 1px;
+  overflow: hidden;
+  transition: top 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.35s;
+  box-shadow: inset 0 1px 2px rgba(28,26,23,0.12);
+}
+.scroll-paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(28,26,23,0.035) 2px, rgba(28,26,23,0.035) 3px
+  );
+}
+
+/* 卷轴轴头 */
+.scroll-knob {
+  position: absolute;
+  left: 3px; right: 3px;
+  height: 6px;
+  border-radius: 3px;
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(28,26,23,0.25), inset 0 1px 0 rgba(255,255,255,0.25);
+  transition: top 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              bottom 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.scroll-knob::before,
+.scroll-knob::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(28,26,23,0.25), inset 0 1px 1px rgba(255,255,255,0.35);
+}
+.scroll-knob::before { left: -4px; }
+.scroll-knob::after  { right: -4px; }
+
+.scroll-knob-top    { top: 0; }
+.scroll-knob-bottom { bottom: 0; }
+
+/* 各卷轴颜色 — 朱砂·玄墨·碧玉 */
+.window-scroll[data-act="close"] .scroll-knob {
+  background: linear-gradient(180deg, #5c1414, #8b2222, #a83232, #8b2222, #5c1414);
+}
+.window-scroll[data-act="close"] .scroll-knob::before,
+.window-scroll[data-act="close"] .scroll-knob::after {
+  background: radial-gradient(circle, #a83232, #5c1414);
+}
+.window-scroll[data-act="min"] .scroll-knob {
+  background: linear-gradient(180deg, #1a1814, #3a3530, #4a443a, #3a3530, #1a1814);
+}
+.window-scroll[data-act="min"] .scroll-knob::before,
+.window-scroll[data-act="min"] .scroll-knob::after {
+  background: radial-gradient(circle, #4a443a, #1a1814);
+}
+.window-scroll[data-act="max"] .scroll-knob {
+  background: linear-gradient(180deg, #5a4420, #8a6a30, #b08a4a, #8a6a30, #5a4420);
+}
+.window-scroll[data-act="max"] .scroll-knob::before,
+.window-scroll[data-act="max"] .scroll-knob::after {
+  background: radial-gradient(circle, #b08a4a, #5a4420);
+}
+
+/* ── 收起状态（默认） ── */
+.window-scroll:not(.open) .scroll-knob-top {
+  top: 50%; margin-top: -3px;
+}
+.window-scroll:not(.open) .scroll-knob-bottom {
+  bottom: 50%; margin-bottom: -3px;
+}
+.window-scroll:not(.open) .scroll-paper {
+  top: 50%; bottom: 50%; height: 0; opacity: 0;
+}
+
+/* ── 展开状态 ── */
+.window-scroll.open .scroll-knob-top    { top: 0; }
+.window-scroll.open .scroll-knob-bottom { bottom: 0; }
+.window-scroll.open .scroll-paper {
+  top: 6px; bottom: 6px; opacity: 1;
+}
+
+/* 展开时纸面中央显示功能文字 */
+.window-scroll.open .scroll-paper::after {
+  content: attr(data-label);
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: transparent;
-  transition: all 0.2s;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.1em;
+  animation: sealFade 0.35s 0.15s both;
 }
 
-.window-btn.min { background: var(--gold); }
-.window-btn.max { background: var(--willow); }
-.window-btn.close { background: var(--cinnabar); }
+@keyframes sealFade {
+  0%   { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
 
-.window-btn:hover { color: var(--ink); }
+/* 点击涟漪 */
+@keyframes scrollPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(176,138,74,0.5); }
+  100% { box-shadow: 0 0 0 8px rgba(176,138,74,0); }
+}
+.window-scroll.pulse {
+  animation: scrollPulse 0.45s ease-out;
+}
 
 .window-body {
   flex: 1;
@@ -295,9 +541,10 @@ html, body {
   bottom: 0; right: 0;
   width: 16px; height: 16px;
   cursor: nwse-resize;
-  background: linear-gradient(135deg, transparent 50%, var(--ink) 50%, var(--ink) 60%, transparent 60%, transparent 70%, var(--ink) 70%, var(--ink) 80%, transparent 80%);
+  background: linear-gradient(135deg, transparent 50%, var(--ink-soft) 50%, var(--ink-soft) 60%, transparent 60%, transparent 70%, var(--ink-soft) 70%, var(--ink-soft) 80%, transparent 80%);
   background-size: 100% 100%;
   z-index: 10;
+  touch-action: none;
 }
 
 .fm-sidebar {
@@ -402,15 +649,15 @@ html, body {
 }
 
 .fm-btn:hover {
-  background: var(--ink);
+  background: var(--surface-bg);
   color: var(--gold);
   transform: translateY(-1px);
   box-shadow: 0 2px 6px var(--shadow);
 }
 
-.fm-btn.danger:hover { background: var(--cinnabar); color: var(--paper); }
-.fm-btn.primary { background: var(--willow-deep); color: var(--paper); border-color: var(--willow-deep); }
-.fm-btn.primary:hover { background: var(--ink); color: var(--gold); }
+.fm-btn.danger:hover { background: var(--cinnabar); color: var(--surface-text); }
+.fm-btn.primary { background: var(--willow-deep); color: var(--surface-text); border-color: var(--willow-deep); }
+.fm-btn.primary:hover { background: var(--surface-bg); color: var(--gold); }
 
 .fm-path {
   flex: 1;
@@ -437,6 +684,56 @@ html, body {
 }
 
 .fm-search:focus { border-color: var(--rust); }
+
+/* 面包屑导航 */
+.fm-breadcrumb {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 12px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0 8px;
+  background: rgba(28,26,23,0.05);
+  border: 1px solid var(--ink-soft);
+  border-radius: 2px;
+  height: 26px;
+}
+.bc-segment {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 2px;
+  transition: all 0.15s;
+  color: var(--ink);
+}
+.bc-segment:hover {
+  background: var(--surface-bg);
+  color: var(--gold);
+}
+.bc-sep {
+  opacity: 0.4;
+  margin: 0 1px;
+}
+
+
+
+/* 拖拽高亮 */
+.fm-dragover {
+  background: rgba(122,139,111,0.12) !important;
+  outline: 2px dashed var(--willow) !important;
+  outline-offset: -4px;
+}
+.fm-drop-target {
+  outline: 2px solid var(--gold) !important;
+  outline-offset: -2px;
+  background: rgba(176,138,74,0.1) !important;
+}
+
+/* 隐藏旧的 fm-path */
+.fm-path { display: none; }
 
 .fm-content {
   flex: 1;
@@ -480,8 +777,8 @@ html, body {
   justify-content: center;
   font-family: 'Ma Shan Zheng', cursive;
   font-size: 28px;
-  color: var(--paper);
-  background: linear-gradient(135deg, var(--ink-soft), var(--ink));
+  color: var(--surface-text);
+  background: linear-gradient(135deg, var(--surface-bg-soft), var(--surface-bg));
   border: 1px solid var(--gold);
   margin-bottom: 6px;
   border-radius: 2px;
@@ -532,7 +829,7 @@ html, body {
   padding: 8px 12px;
   align-items: center;
   font-size: 12px;
-  border-bottom: 1px dashed rgba(28, 26, 23, 0.15);
+  border-bottom: 1px dashed var(--border-subtle);
 }
 
 .fm-list-header {
@@ -904,7 +1201,7 @@ html, body {
   position: absolute;
   left: -10px; right: -10px;
   height: 14px;
-  background: linear-gradient(180deg, var(--ink-soft), var(--ink));
+  background: linear-gradient(180deg, var(--surface-bg-soft), var(--surface-bg));
   border: 1px solid var(--gold);
 }
 .poem-scroll::before { top: -14px; }
@@ -967,7 +1264,7 @@ html, body {
   justify-content: space-between;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px dashed rgba(28,26,23,0.1);
+  border-bottom: 1px dashed var(--border-subtle);
 }
 .settings-row:last-child { border-bottom: none; }
 
@@ -1033,11 +1330,11 @@ html, body {
 }
 
 .ctx-item:hover {
-  background: var(--ink);
+  background: var(--surface-bg);
   color: var(--gold);
 }
 
-.ctx-item.danger:hover { background: var(--cinnabar); color: var(--paper); }
+.ctx-item.danger:hover { background: var(--cinnabar); color: var(--surface-text); }
 
 .ctx-divider {
   height: 1px;
@@ -1048,7 +1345,7 @@ html, body {
 
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(28, 26, 23, 0.5);
+  background: var(--overlay-bg);
   backdrop-filter: blur(4px);
   z-index: 9000;
   display: flex;
@@ -1067,7 +1364,7 @@ html, body {
 }
 
 .modal-header {
-  background: linear-gradient(180deg, var(--ink), var(--ink-soft));
+  background: linear-gradient(180deg, var(--surface-bg), var(--surface-bg-soft));
   color: var(--gold);
   padding: 12px 20px;
   font-family: 'Ma Shan Zheng', cursive;
@@ -1118,6 +1415,51 @@ html, body {
   pointer-events: none;
 }
 
+.protocol-banner {
+  position: fixed;
+  top: 38px;
+  left: 0; right: 0;
+  z-index: 999;
+  background: linear-gradient(90deg, var(--rust), #8a3a2a);
+  color: var(--surface-text);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  animation: bannerSlide 0.4s ease;
+}
+.protocol-banner .banner-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.protocol-banner .banner-icon {
+  font-size: 18px;
+  opacity: 0.9;
+}
+.protocol-banner .banner-close {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: var(--surface-text);
+  padding: 2px 12px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 2px;
+  letter-spacing: 0.1em;
+}
+.protocol-banner .banner-close:hover {
+  background: rgba(255,255,255,0.15);
+}
+@keyframes bannerSlide {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 .toast {
   background: var(--paper);
   border: 1px solid var(--ink);
@@ -1162,6 +1504,487 @@ html, body {
 ::-webkit-scrollbar-track { background: var(--paper-deep); }
 ::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 0; }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink); }
+
+[data-theme="dark"] .window {
+  border-color: #3a3530;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(212, 168, 90, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .window-titlebar {
+  background: linear-gradient(180deg, #0f0e0c 0%, #1a1816 100%);
+  border-bottom-color: #3a3530;
+  color: var(--surface-text);
+}
+[data-theme="dark"] .window-title {
+  color: var(--gold);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+[data-theme="dark"] .window-body {
+  background: var(--paper);
+}
+[data-theme="dark"] .fm-sidebar {
+  background: linear-gradient(180deg, var(--paper-deep), var(--paper));
+  border-right-color: #3a3530;
+}
+[data-theme="dark"] .fm-sidebar h3 {
+  color: var(--ink-soft);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .fm-tree-item {
+  color: var(--ink);
+}
+[data-theme="dark"] .fm-tree-item:hover {
+  background: rgba(122, 139, 111, 0.15);
+  border-left-color: var(--willow);
+}
+[data-theme="dark"] .fm-tree-item.active {
+  background: rgba(168, 85, 58, 0.12);
+  border-left-color: var(--rust);
+  color: var(--rust);
+}
+[data-theme="dark"] .fm-recent-item {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .fm-recent-item:hover {
+  background: rgba(176, 138, 74, 0.1);
+  border-left-color: var(--gold);
+  color: var(--ink);
+}
+[data-theme="dark"] .fm-toolbar {
+  background: var(--paper-deep);
+  border-bottom-color: #3a3530;
+}
+[data-theme="dark"] .fm-btn {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+  color: var(--ink);
+}
+[data-theme="dark"] .fm-btn:hover {
+  background: #2a2520;
+  color: var(--gold);
+}
+[data-theme="dark"] .fm-btn.primary {
+  background: var(--willow-deep);
+  color: var(--surface-text);
+  border-color: var(--willow-deep);
+}
+[data-theme="dark"] .fm-btn.primary:hover {
+  background: #2a2520;
+  color: var(--gold);
+}
+[data-theme="dark"] .fm-btn.danger:hover {
+  background: var(--cinnabar);
+  color: var(--surface-text);
+}
+[data-theme="dark"] .fm-search,
+[data-theme="dark"] .fm-path,
+[data-theme="dark"] .modal-input {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+  color: var(--ink);
+}
+[data-theme="dark"] .fm-breadcrumb {
+  background: rgba(255,255,255,0.04);
+  border-color: #3a3530;
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .bc-segment {
+  color: var(--ink);
+}
+[data-theme="dark"] .bc-segment:hover {
+  background: var(--surface-bg);
+  color: var(--gold);
+}
+[data-theme="dark"] .fm-statusbar {
+  background: var(--paper-deep);
+  border-top-color: #3a3530;
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .fm-item .fi-icon {
+  color: var(--surface-text);
+  background: linear-gradient(135deg, var(--surface-bg-soft), var(--surface-bg));
+  border-color: var(--gold);
+}
+[data-theme="dark"] .fm-item[data-type="folder"] .fi-icon {
+  background: linear-gradient(135deg, var(--willow-deep), var(--surface-bg-soft));
+}
+[data-theme="dark"] .fm-item[data-type="image"] .fi-icon {
+  background: linear-gradient(135deg, var(--rust), var(--surface-bg-soft));
+}
+[data-theme="dark"] .fm-item[data-type="text"] .fi-icon {
+  background: linear-gradient(135deg, var(--plum), var(--surface-bg-soft));
+}
+[data-theme="dark"] .fm-item[data-type="binary"] .fi-icon {
+  background: linear-gradient(135deg, var(--surface-bg), var(--jade));
+}
+[data-theme="dark"] .fm-item .fi-name {
+  color: var(--ink);
+}
+[data-theme="dark"] .fm-item .fi-size {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .fm-list-header {
+  background: var(--paper-deep);
+  border-bottom-color: #3a3530;
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .fm-list-row {
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+[data-theme="dark"] .fm-list-row:hover {
+  background: rgba(122, 139, 111, 0.1);
+}
+[data-theme="dark"] .fm-list-row.selected {
+  background: rgba(168, 85, 58, 0.15);
+}
+[data-theme="dark"] .fm-list-row .li-icon {
+  background: var(--surface-bg-soft);
+  color: var(--gold);
+}
+[data-theme="dark"] .fm-empty .big {
+  color: var(--willow-mist);
+}
+[data-theme="dark"] .fm-empty .text {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .fm-empty .sub {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .settings-section {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+}
+[data-theme="dark"] .settings-section h3 {
+  color: var(--ink);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .settings-row .label {
+  color: var(--ink);
+}
+[data-theme="dark"] .settings-row .desc {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .storage-card {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+}
+[data-theme="dark"] .storage-card h3 {
+  color: var(--ink);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .storage-bar {
+  background: var(--paper);
+  border-color: #3a3530;
+}
+[data-theme="dark"] .storage-stat {
+  background: var(--paper);
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .storage-stat .num {
+  color: var(--rust);
+}
+[data-theme="dark"] .storage-stat .lbl {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .core-item {
+  background: var(--paper);
+  border-color: #3a3530;
+  border-left-color: #3a3530;
+}
+[data-theme="dark"] .core-item.active { border-left-color: var(--willow-deep); }
+[data-theme="dark"] .core-item.warn { border-left-color: var(--gold); }
+[data-theme="dark"] .core-item.off { border-left-color: var(--cinnabar); }
+[data-theme="dark"] .core-item .core-name {
+  color: var(--ink);
+}
+[data-theme="dark"] .core-item .core-status-text {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .core-item .core-desc {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .context-menu {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+[data-theme="dark"] .ctx-item {
+  color: var(--ink);
+}
+[data-theme="dark"] .ctx-item:hover {
+  background: var(--surface-bg);
+  color: var(--gold);
+}
+[data-theme="dark"] .ctx-item.danger:hover {
+  background: var(--cinnabar);
+  color: var(--surface-text);
+}
+[data-theme="dark"] .ctx-divider {
+  background: var(--ink-soft);
+  opacity: 0.3;
+}
+[data-theme="dark"] .toast {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+  color: var(--ink);
+}
+[data-theme="dark"] .toast .t-title {
+  color: var(--ink);
+}
+[data-theme="dark"] .toast .t-msg {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .modal {
+  background: var(--paper);
+  border-color: #3a3530;
+}
+[data-theme="dark"] .modal-header {
+  background: linear-gradient(180deg, #0f0e0c, #1a1816);
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+[data-theme="dark"] .modal-body {
+  color: var(--ink);
+}
+[data-theme="dark"] .modal-input {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+  color: var(--ink);
+}
+[data-theme="dark"] .modal-footer {
+  background: var(--paper-deep);
+  border-top-color: #3a3530;
+}
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+[data-theme="dark"] .poem-scroll {
+  background: linear-gradient(180deg, var(--paper-deep), var(--paper));
+  border-color: #3a3530;
+}
+[data-theme="dark"] .poem-scroll::before,
+[data-theme="dark"] .poem-scroll::after {
+  background: linear-gradient(180deg, var(--surface-bg-soft), var(--surface-bg));
+  border-color: var(--gold);
+}
+[data-theme="dark"] .poem-title {
+  color: var(--ink);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .poem-text {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .poem-author {
+  color: var(--rust);
+}
+[data-theme="dark"] .editor-textarea {
+  color: var(--ink);
+  background-image:
+    linear-gradient(transparent 31px, rgba(212,168,90,0.08) 31px, rgba(212,168,90,0.08) 32px, transparent 32px);
+}
+[data-theme="dark"] .editor-toolbar {
+  background: var(--paper-deep);
+  border-bottom-color: #3a3530;
+}
+[data-theme="dark"] .editor-info {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .image-viewer {
+  background:
+    repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%)
+    50% / 20px 20px;
+}
+[data-theme="dark"] .image-viewer img {
+  border-color: #3a3530;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+[data-theme="dark"] #dock {
+  background: rgba(10, 9, 7, 0.92);
+  border-color: rgba(212,168,90,0.3);
+}
+[data-theme="dark"] .dock-item {
+  color: var(--gold);
+}
+[data-theme="dark"] .dock-item:hover {
+  background: rgba(176, 138, 74, 0.2);
+  border-color: var(--gold);
+}
+[data-theme="dark"] .dock-item.active::after {
+  background: var(--gold);
+}
+[data-theme="dark"] #topbar {
+  background: linear-gradient(180deg, rgba(10,9,7,0.96), rgba(10,9,7,0.9));
+  border-bottom-color: rgba(212,168,90,0.2);
+  color: var(--surface-text);
+}
+[data-theme="dark"] #topbar .brand {
+  color: var(--gold);
+}
+[data-theme="dark"] #topbar .meta span {
+  opacity: 0.85;
+  color: var(--surface-text);
+}
+[data-theme="dark"] #topbar .meta .clock {
+  color: var(--gold);
+}
+[data-theme="dark"] #topbar .greeting {
+  color: var(--willow-mist);
+}
+[data-theme="dark"] .core-dot {
+  background: var(--surface-bg-soft);
+}
+[data-theme="dark"] .core-dot.active {
+  background: var(--willow-mist);
+  box-shadow: 0 0 4px var(--willow-mist);
+}
+[data-theme="dark"] .core-dot.gold.active {
+  background: var(--gold);
+  box-shadow: 0 0 4px var(--gold);
+}
+[data-theme="dark"] .desk-icon:hover {
+  background: rgba(255,255,255,0.06);
+}
+[data-theme="dark"] .desk-icon .ico {
+  color: var(--surface-text);
+  background: linear-gradient(135deg, var(--surface-bg-soft), var(--surface-bg));
+  border-color: var(--gold);
+}
+[data-theme="dark"] .desk-icon[data-app="files"] .ico {
+  background: linear-gradient(135deg, var(--willow-deep), var(--surface-bg-soft));
+}
+[data-theme="dark"] .desk-icon[data-app="editor"] .ico {
+  background: linear-gradient(135deg, var(--plum), var(--surface-bg-soft));
+}
+[data-theme="dark"] .desk-icon[data-app="image"] .ico {
+  background: linear-gradient(135deg, var(--rust), var(--surface-bg-soft));
+}
+[data-theme="dark"] .desk-icon[data-app="terminal"] .ico {
+  background: linear-gradient(135deg, var(--surface-bg), var(--surface-bg-soft));
+}
+[data-theme="dark"] .desk-icon[data-app="poem"] .ico {
+  background: linear-gradient(135deg, var(--gold), var(--surface-bg-soft));
+  color: var(--surface-bg);
+}
+[data-theme="dark"] .desk-icon[data-app="storage"] .ico {
+  background: linear-gradient(135deg, var(--jade), var(--surface-bg-soft));
+}
+[data-theme="dark"] .desk-icon[data-app="settings"] .ico {
+  background: linear-gradient(135deg, var(--surface-bg-soft), var(--plum));
+}
+[data-theme="dark"] .desk-icon .label {
+  color: var(--ink);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+[data-theme="dark"] .fm-item:hover {
+  background: rgba(122,139,111,0.1);
+}
+[data-theme="dark"] .fm-item.selected {
+  background: rgba(196,101,74,0.18);
+}
+[data-theme="dark"] .toggle {
+  background: var(--surface-bg-soft);
+}
+[data-theme="dark"] .toggle.on {
+  background: var(--willow-deep);
+}
+[data-theme="dark"] .toggle::after {
+  background: var(--surface-text);
+}
+[data-theme="dark"] .welcome-overlay {
+  background: rgba(0, 0, 0, 0.85);
+}
+[data-theme="dark"] .welcome-card {
+  background: var(--paper);
+  border-color: var(--gold);
+}
+[data-theme="dark"] .welcome-card h1 {
+  color: var(--ink);
+}
+[data-theme="dark"] .welcome-card .sub {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .welcome-card .desc {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .welcome-card .name-input {
+  background: var(--paper-deep);
+  border-color: #3a3530;
+  color: var(--ink);
+}
+[data-theme="dark"] .scroll-paper {
+  background: linear-gradient(180deg, #1a1816, #242119, #1a1816);
+}
+[data-theme="dark"] .scroll-paper::before {
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 3px
+  );
+}
+[data-theme="dark"] .window-scroll.open .scroll-paper::after {
+  color: var(--ink-soft);
+}
+[data-theme="dark"] .resize-handle {
+  background: linear-gradient(135deg, transparent 50%, var(--ink-soft) 50%, var(--ink-soft) 60%, transparent 60%, transparent 70%, var(--ink-soft) 70%, var(--ink-soft) 80%, transparent 80%);
+}
+[data-theme="dark"] .terminal-body {
+  background: #0a0908;
+  color: #d4c896;
+}
+[data-theme="dark"] .terminal-line .prompt { color: var(--willow-mist); }
+[data-theme="dark"] .terminal-line .path { color: var(--gold); }
+[data-theme="dark"] .terminal-line .error { color: var(--cinnabar); }
+[data-theme="dark"] .terminal-line .ok { color: var(--willow-mist); }
+[data-theme="dark"] .terminal-line .dim { color: #5a5344; }
+[data-theme="dark"] .terminal-input {
+  color: #d4c896;
+}
+[data-theme="dark"] .petal {
+  background: var(--willow-deep);
+}
+[data-theme="dark"] #splash {
+  background: #0a0908;
+}
+[data-theme="dark"] #splash .splash-title {
+  color: var(--gold);
+}
+[data-theme="dark"] #splash .splash-sub {
+  color: var(--surface-text);
+}
+[data-theme="dark"] #splash .splash-core {
+  color: var(--ink-soft);
+  border-color: var(--ink-soft);
+}
+[data-theme="dark"] #splash .splash-core.lit {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+[data-theme="dark"] #splash .splash-loader {
+  background: var(--ink-soft);
+}
+[data-theme="dark"] .fm-dragover {
+  background: rgba(122,139,111,0.12) !important;
+  outline-color: var(--willow) !important;
+}
+[data-theme="dark"] .fm-drop-target {
+  outline-color: var(--gold) !important;
+  background: rgba(176,138,74,0.1) !important;
+}
+[data-theme="dark"] .image-viewer-placeholder {
+  color: var(--willow-mist);
+}
+[data-theme="dark"] .editor-draft-indicator {
+  color: var(--gold);
+}
+[data-theme="dark"] select,
+[data-theme="dark"] select option {
+  background: var(--paper-deep);
+  color: var(--ink);
+}
+[data-theme="dark"] .window-body::before {
+  opacity: 0.08;
+}
 
 #splash {
   position: fixed; inset: 0;
@@ -1242,7 +2065,7 @@ html, body {
 
 .welcome-overlay {
   position: fixed; inset: 0;
-  background: rgba(28, 26, 23, 0.85);
+  background: var(--overlay-bg);
   backdrop-filter: blur(10px);
   z-index: 99998;
   display: flex;
@@ -1293,6 +2116,7 @@ html, body {
   border: 1px solid var(--ink-soft);
   font-family: 'Noto Serif SC', serif;
   font-size: 14px;
+  color: var(--ink);
   outline: none;
   margin-bottom: 20px;
   text-align: center;
@@ -1368,11 +2192,6 @@ html, body {
       <ellipse cx="54" cy="220" rx="2" ry="8" transform="rotate(30 54 220)"/>
       <ellipse cx="45" cy="260" rx="2" ry="8" transform="rotate(-32 45 260)"/>
     </g>
-  </svg>
-
-  <svg class="mountain" viewBox="0 0 1200 300" preserveAspectRatio="none">
-    <path d="M0,300 L0,200 Q150,100 300,150 Q450,80 600,140 Q750,60 900,130 Q1050,90 1200,170 L1200,300 Z" fill="#4f5e48"/>
-    <path d="M0,300 L0,240 Q200,180 400,210 Q600,160 800,200 Q1000,170 1200,220 L1200,300 Z" fill="#3a3530" opacity="0.6"/>
   </svg>
 
   <div id="topbar">
@@ -1725,6 +2544,30 @@ class HybridFS {
     this.db = null;
     this.opfsRoot = null;
     this.useOPFS = false;
+    this._locks = new Map();
+    this._trash = [];
+  }
+
+  _normalizePath(path) {
+    if (!path || typeof path !== 'string') return '/';
+    path = path.replace(/\/+/g, '/');
+    if (path !== '/' && path.endsWith('/')) path = path.slice(0, -1);
+    if (!path.startsWith('/')) path = '/' + path;
+    return path || '/';
+  }
+
+  async _acquireLock(path) {
+    const key = this._normalizePath(path);
+    while (this._locks.has(key)) {
+      await this._locks.get(key);
+    }
+    let resolve;
+    const promise = new Promise(r => resolve = r);
+    this._locks.set(key, promise);
+    return () => {
+      this._locks.delete(key);
+      resolve();
+    };
   }
 
   async init() {
@@ -1733,13 +2576,17 @@ class HybridFS {
     
     try {
       if ('storage' in navigator && 'getDirectory' in navigator.storage) {
-        this.opfsRoot = await navigator.storage.getDirectory();
+        const opfsPromise = Promise.race([
+          navigator.storage.getDirectory(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('OPFS 超时')), 3000))
+        ]);
+        this.opfsRoot = await opfsPromise;
         this.useOPFS = true;
         QingSi.cores.opfs = true;
         console.log('%c[青丝]%c OPFS 启用', 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
       }
     } catch (e) {
-      console.warn('OPFS 不可用,IDB 兜底');
+      console.warn('OPFS 不可用,IDB 兜底:', e.message);
     }
 
     const root = await this.getNode('/');
@@ -1748,26 +2595,68 @@ class HybridFS {
         path: '/', name: '/', type: 'folder',
         parent: null, created: Date.now(), modified: Date.now(), size: 0
       });
-      await this._seedDefaults();
+      try { await this._seedDefaults(); }
+      catch(e) { console.warn('[青丝] 种子数据写入失败:', e); }
+    }
+
+    await this._repairInconsistencies();
+  }
+
+  async _repairInconsistencies() {
+    try {
+      const all = await this.getAllNodes();
+      const paths = new Set(all.map(n => n.path));
+      const orphans = [];
+      for (const n of all) {
+        if (n.path === '/') continue;
+        if (n.parent && n.parent !== '/' && !paths.has(n.parent)) {
+          orphans.push(n);
+        }
+        if (n.type !== 'folder') {
+          const blob = await this._readBlob(n.path);
+          if (!blob && n.size > 0) {
+            orphans.push(n);
+          }
+        }
+      }
+      for (const o of orphans) {
+        if (o.parent && o.parent !== '/' && !paths.has(o.parent)) {
+          o.parent = '/';
+          await this._putNode(o);
+        }
+      }
+      if (orphans.length > 0) {
+        console.log('[青丝] 修复了', orphans.length, '个孤立节点');
+      }
+    } catch(e) {
+      console.warn('[青丝] 一致性检查失败:', e);
     }
   }
 
   _openDB() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(this.dbName, this.dbVersion);
-      req.onerror = () => reject(req.error);
-      req.onsuccess = () => resolve(req.result);
+      const timeout = setTimeout(() => {
+        reject(new Error('IndexedDB 打开超时'));
+      }, 5000);
+      req.onerror = () => { clearTimeout(timeout); reject(req.error); };
+      req.onsuccess = () => { clearTimeout(timeout); resolve(req.result); };
       req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('nodes')) {
-          const store = db.createObjectStore('nodes', { keyPath: 'path' });
-          store.createIndex('parent', 'parent', { unique: false });
-          store.createIndex('name', 'name', { unique: false });
-        }
-        if (!db.objectStoreNames.contains('blobs')) {
-          db.createObjectStore('blobs', { keyPath: 'path' });
+        try {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('nodes')) {
+            const store = db.createObjectStore('nodes', { keyPath: 'path' });
+            store.createIndex('parent', 'parent', { unique: false });
+            store.createIndex('name', 'name', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('blobs')) {
+            db.createObjectStore('blobs', { keyPath: 'path' });
+          }
+        } catch (err) {
+          console.warn('[青丝] IndexedDB upgrade 出错:', err);
         }
       };
+      req.onblocked = () => console.warn('[青丝] IndexedDB 被阻塞,请关闭其他标签页');
     });
   }
 
@@ -1789,6 +2678,7 @@ class HybridFS {
   }
 
   async getNode(path) {
+    path = this._normalizePath(path);
     return new Promise((resolve, reject) => {
       const req = this._tx(['nodes']).objectStore('nodes').get(path);
       req.onsuccess = () => resolve(req.result);
@@ -1813,6 +2703,7 @@ class HybridFS {
   }
 
   async listChildren(path) {
+    path = this._normalizePath(path);
     return new Promise((resolve, reject) => {
       const tx = this._tx(['nodes']);
       const idx = tx.objectStore('nodes').index('parent');
@@ -1837,6 +2728,9 @@ class HybridFS {
         const writable = await handle.createWritable();
         await writable.write(data);
         await writable.close();
+        try {
+          await this._syncBlobToIDB(path, data);
+        } catch(e) {}
         return;
       } catch (e) {
         console.warn('OPFS 写入失败,回退 IDB:', e);
@@ -1849,11 +2743,22 @@ class HybridFS {
     });
   }
 
+  async _syncBlobToIDB(path, data) {
+    return new Promise((resolve, reject) => {
+      const req = this._tx(['blobs'], 'readwrite').objectStore('blobs').put({ path, data });
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
   async _readBlob(path) {
     if (this.useOPFS) {
       try {
         const handle = await this._getOPFSFile(path, false);
-        if (handle) return await handle.getFile();
+        if (handle) {
+          const file = await handle.getFile();
+          if (file && file.size > 0) return file;
+        }
       } catch (e) {}
     }
     return new Promise((resolve, reject) => {
@@ -1917,51 +2822,89 @@ class HybridFS {
     return 'binary';
   }
 
-  async exists(path) { return !!(await this.getNode(path)); }
+  async exists(path) { return !!(await this.getNode(this._normalizePath(path))); }
+
+  async _checkQuota(requiredBytes) {
+    if (navigator.storage && navigator.storage.estimate) {
+      try {
+        const est = await navigator.storage.estimate();
+        if (est.quota && est.usage !== undefined) {
+          const available = est.quota - est.usage;
+          if (available < requiredBytes * 1.5) {
+            throw new Error('存储空间不足,剩余 ' + fmtSize(available));
+          }
+        }
+      } catch(e) {
+        if (e.message.includes('存储空间不足')) throw e;
+      }
+    }
+  }
 
   async mkdir(path, recursive = true) {
-    if (await this.exists(path)) throw new Error('已存在: ' + path);
-    const parent = this._parentPath(path);
-    if (parent && !(await this.exists(parent))) {
-      if (recursive) await this.mkdir(parent);
-      else throw new Error('父目录不存在');
+    path = this._normalizePath(path);
+    if (!path || path === '/') throw new Error('根目录已存');
+    const unlock = await this._acquireLock(path);
+    try {
+      if (await this.exists(path)) return;
+      const parent = this._parentPath(path);
+      if (parent && parent !== '/' && !(await this.exists(parent))) {
+        if (recursive) await this.mkdir(parent);
+        else throw new Error('父目录不存在: ' + parent);
+      }
+      if (this.useOPFS) {
+        try {
+          const parts = path.split('/').filter(Boolean);
+          let dir = this.opfsRoot;
+          for (const p of parts) {
+            dir = await dir.getDirectoryHandle(p, { create: true });
+          }
+        } catch (e) {}
+      }
+      await this._putNode({
+        path, name: this._basename(path), type: 'folder', parent,
+        created: Date.now(), modified: Date.now(), size: 0
+      });
+      QingSi.sync?.broadcast('fs:created', { path, type: 'folder' });
+      QingSi.cache?.invalidate(parent || '/');
+    } finally {
+      unlock();
     }
-    if (this.useOPFS) {
-      try {
-        const parts = path.split('/').filter(Boolean);
-        let dir = this.opfsRoot;
-        for (const p of parts) {
-          dir = await dir.getDirectoryHandle(p, { create: true });
-        }
-      } catch (e) {}
-    }
-    await this._putNode({
-      path, name: this._basename(path), type: 'folder', parent,
-      created: Date.now(), modified: Date.now(), size: 0
-    });
-    QingSi.sync?.broadcast('fs:created', { path, type: 'folder' });
-    QingSi.cache?.invalidate(parent || '/');
   }
 
   async writeFile(path, content) {
-    const parent = this._parentPath(path);
-    if (parent && !(await this.exists(parent))) await this.mkdir(parent);
-    let blob;
-    if (content instanceof Blob) blob = content;
-    else if (content instanceof ArrayBuffer) blob = new Blob([content]);
-    else blob = new Blob([String(content)], { type: 'text/plain' });
-    
-    await this._writeBlob(path, blob);
+    path = this._normalizePath(path);
+    if (!path || path === '/') throw new Error('路径不可为空');
     const name = this._basename(path);
-    await this._putNode({
-      path, name, type: this._detectType(name), parent,
-      created: Date.now(), modified: Date.now(), size: blob.size, mime: blob.type
-    });
-    QingSi.sync?.broadcast('fs:written', { path });
-    QingSi.cache?.invalidate(parent || '/');
+    if (!name || /[\/\\:*?"<>|]/.test(name)) throw new Error('文件名不合法: ' + name);
+    const unlock = await this._acquireLock(path);
+    try {
+      const parent = this._parentPath(path);
+      if (parent && parent !== '/' && !(await this.exists(parent))) await this.mkdir(parent);
+      let blob;
+      if (content instanceof Blob) blob = content;
+      else if (content instanceof ArrayBuffer) blob = new Blob([content]);
+      else if (content instanceof Uint8Array) blob = new Blob([content]);
+      else blob = new Blob([String(content)], { type: 'text/plain' });
+      
+      await this._checkQuota(blob.size);
+      await this._writeBlob(path, blob);
+      const existing = await this.getNode(path);
+      await this._putNode({
+        path, name, type: this._detectType(name), parent,
+        created: existing?.created || Date.now(), modified: Date.now(), size: blob.size, mime: blob.type
+      });
+      QingSi.sync?.broadcast('fs:written', { path });
+      QingSi.cache?.invalidate(parent || '/');
+    } finally {
+      unlock();
+    }
   }
 
   async readFile(path, asText = false) {
+    path = this._normalizePath(path);
+    const node = await this.getNode(path);
+    if (!node) return null;
+    if (node.type === 'folder') throw new Error('不可读取文件夹: ' + path);
     const blob = await this._readBlob(path);
     if (!blob) return null;
     if (asText) return await blob.text();
@@ -1969,75 +2912,126 @@ class HybridFS {
   }
 
   async delete(path) {
-    if (path === '/') throw new Error('不可删除根目录');
-    const node = await this.getNode(path);
-    if (!node) throw new Error('不存在: ' + path);
-    if (node.type === 'folder') {
-      const children = await this.listChildren(path);
-      for (const c of children) await this.delete(c.path);
-    } else {
-      await this._deleteBlob(path);
+    path = this._normalizePath(path);
+    if (!path || path === '/') throw new Error('不可删除根目录');
+    const unlock = await this._acquireLock(path);
+    try {
+      const node = await this.getNode(path);
+      if (!node) throw new Error('不存在: ' + path);
+      this._trash.push({ ...node, _trashedAt: Date.now() });
+      if (this._trash.length > 50) this._trash.shift();
+      try {
+        if (node.type === 'folder') {
+          const children = await this.listChildren(path);
+          for (const c of children) await this.delete(c.path);
+        } else {
+          await this._deleteBlob(path);
+        }
+        await this._deleteNodeMeta(path);
+        QingSi.prefs?.removeDraft(path);
+        QingSi.sync?.broadcast('fs:deleted', { path });
+        QingSi.cache?.invalidate(this._parentPath(path) || '/');
+      } catch (e) {
+        QingSi.cache?.invalidate(this._parentPath(path) || '/');
+        throw e;
+      }
+    } finally {
+      unlock();
     }
-    await this._deleteNodeMeta(path);
-    // 清理草稿
-    QingSi.prefs?.removeDraft(path);
-    QingSi.sync?.broadcast('fs:deleted', { path });
-    QingSi.cache?.invalidate(this._parentPath(path) || '/');
   }
 
   async rename(oldPath, newName) {
+    oldPath = this._normalizePath(oldPath);
     const node = await this.getNode(oldPath);
     if (!node) throw new Error('不存在');
+    if (!newName || !newName.trim()) throw new Error('新名不可为空');
+    newName = newName.trim();
+    if (/[\/\\:*?"<>|]/.test(newName)) throw new Error('文件名不合法: ' + newName);
     const parent = this._parentPath(oldPath);
     const newPath = this._join(parent, newName);
+    if (oldPath === newPath) return;
     if (await this.exists(newPath)) throw new Error('新名已存在');
     await this.move(oldPath, newPath);
   }
 
   async move(oldPath, newPath) {
-    const node = await this.getNode(oldPath);
-    if (!node) throw new Error('不存在');
-    if (node.type === 'folder') {
-      await this._putNode({
-        ...node, path: newPath, name: this._basename(newPath),
-        parent: this._parentPath(newPath), modified: Date.now()
-      });
-      const children = await this.listChildren(oldPath);
-      for (const c of children) {
-        await this.move(c.path, this._join(newPath, c.name));
+    oldPath = this._normalizePath(oldPath);
+    newPath = this._normalizePath(newPath);
+    if (oldPath === newPath) return;
+    if (newPath.startsWith(oldPath + '/')) throw new Error('不可移入自身子目录');
+    const unlock = await this._acquireLock(oldPath);
+    const unlock2 = await this._acquireLock(newPath);
+    try {
+      const node = await this.getNode(oldPath);
+      if (!node) throw new Error('不存在: ' + oldPath);
+      const newParent = this._parentPath(newPath);
+      if (newParent && newParent !== '/' && !(await this.exists(newParent))) {
+        await this.mkdir(newParent);
       }
-      await this._deleteNodeMeta(oldPath);
-    } else {
-      const blob = await this._readBlob(oldPath);
-      await this._writeBlob(newPath, blob);
-      await this._deleteBlob(oldPath);
-      await this._putNode({
-        ...node, path: newPath, name: this._basename(newPath),
-        parent: this._parentPath(newPath), modified: Date.now()
-      });
-      await this._deleteNodeMeta(oldPath);
+      if (await this.exists(newPath)) {
+        await this.delete(newPath);
+      }
+      if (node.type === 'folder') {
+        const children = await this.listChildren(oldPath);
+        await this._putNode({
+          ...node, path: newPath, name: this._basename(newPath),
+          parent: newParent, modified: Date.now()
+        });
+        for (const c of children) {
+          await this.move(c.path, this._join(newPath, c.name));
+        }
+        await this._deleteNodeMeta(oldPath);
+      } else {
+        const blob = await this._readBlob(oldPath);
+        if (blob) await this._writeBlob(newPath, blob);
+        await this._deleteBlob(oldPath);
+        await this._putNode({
+          ...node, path: newPath, name: this._basename(newPath),
+          parent: newParent, modified: Date.now()
+        });
+        await this._deleteNodeMeta(oldPath);
+      }
+      QingSi.sync?.broadcast('fs:moved', { oldPath, newPath });
+      QingSi.cache?.invalidate(this._parentPath(oldPath) || '/');
+      QingSi.cache?.invalidate(newParent || '/');
+    } finally {
+      unlock2();
+      unlock();
     }
-    QingSi.sync?.broadcast('fs:moved', { oldPath, newPath });
-    QingSi.cache?.invalidate(this._parentPath(oldPath) || '/');
-    QingSi.cache?.invalidate(this._parentPath(newPath) || '/');
   }
 
   async copy(srcPath, destPath) {
-    const node = await this.getNode(srcPath);
-    if (!node) throw new Error('源不存在');
-    if (node.type === 'folder') {
-      await this.mkdir(destPath);
-      const children = await this.listChildren(srcPath);
-      for (const c of children) {
-        await this.copy(c.path, this._join(destPath, c.name));
+    srcPath = this._normalizePath(srcPath);
+    destPath = this._normalizePath(destPath);
+    if (srcPath === destPath) throw new Error('源与目标相同');
+    if (destPath.startsWith(srcPath + '/')) throw new Error('不可复制到自身子目录');
+    const unlock = await this._acquireLock(destPath);
+    try {
+      const node = await this.getNode(srcPath);
+      if (!node) throw new Error('源不存在: ' + srcPath);
+      const destParent = this._parentPath(destPath);
+      if (destParent && destParent !== '/' && !(await this.exists(destParent))) {
+        await this.mkdir(destParent);
       }
-    } else {
-      const blob = await this._readBlob(srcPath);
-      await this.writeFile(destPath, blob);
+      if (node.type === 'folder') {
+        await this.mkdir(destPath);
+        const children = await this.listChildren(srcPath);
+        for (const c of children) {
+          await this.copy(c.path, this._join(destPath, c.name));
+        }
+      } else {
+        const blob = await this._readBlob(srcPath);
+        await this.writeFile(destPath, blob || new Blob(['']));
+      }
+      QingSi.sync?.broadcast('fs:copied', { srcPath, destPath });
+      QingSi.cache?.invalidate(destParent || '/');
+    } finally {
+      unlock();
     }
   }
 
   async search(query, root = '/') {
+    root = this._normalizePath(root);
     const all = await this.getAllNodes();
     const q = query.toLowerCase();
     return all.filter(n => n.path !== '/' && n.name.toLowerCase().includes(q) && n.path.startsWith(root));
@@ -2058,6 +3052,120 @@ class HybridFS {
       quota = await navigator.storage.estimate();
     }
     return { totalSize, fileCount, folderCount, typeCount, quota, useOPFS: this.useOPFS };
+  }
+
+  async syncOPFSToIDB() {
+    if (!this.useOPFS) return 0;
+    let synced = 0;
+    try {
+      const all = await this.getAllNodes();
+      for (const n of all) {
+        if (n.type === 'folder') continue;
+        try {
+          const handle = await this._getOPFSFile(n.path, false);
+          if (handle) {
+            const file = await handle.getFile();
+            if (file && file.size > 0) {
+              await this._syncBlobToIDB(n.path, file);
+              synced++;
+            }
+          }
+        } catch(e) {}
+      }
+    } catch(e) {
+      console.warn('[青丝] OPFS→IDB 同步出错:', e);
+    }
+    return synced;
+  }
+
+  async syncIDBToOPFS() {
+    if (!this.useOPFS) return 0;
+    let synced = 0;
+    try {
+      const all = await this.getAllNodes();
+      for (const n of all) {
+        if (n.type === 'folder') {
+          try {
+            const parts = n.path.split('/').filter(Boolean);
+            let dir = this.opfsRoot;
+            for (const p of parts) {
+              dir = await dir.getDirectoryHandle(p, { create: true });
+            }
+          } catch(e) {}
+          continue;
+        }
+        try {
+          let needSync = false;
+          try {
+            const handle = await this._getOPFSFile(n.path, false);
+            if (handle) {
+              const file = await handle.getFile();
+              if (!file || file.size === 0) needSync = true;
+            }
+          } catch(e) { needSync = true; }
+          if (needSync) {
+            const blob = await this._readBlob(n.path);
+            if (blob && blob.size > 0) {
+              const handle = await this._getOPFSFile(n.path, true);
+              const writable = await handle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              synced++;
+            }
+          }
+        } catch(e) {}
+      }
+    } catch(e) {
+      console.warn('[青丝] IDB→OPFS 同步出错:', e);
+    }
+    return synced;
+  }
+
+  async verifyIntegrity() {
+    const report = { orphanNodes: 0, missingBlobs: 0, orphanBlobs: 0, repaired: 0 };
+    try {
+      const all = await this.getAllNodes();
+      const nodePaths = new Set(all.map(n => n.path));
+      for (const n of all) {
+        if (n.path === '/') continue;
+        if (n.parent && n.parent !== '/' && !nodePaths.has(n.parent)) {
+          report.orphanNodes++;
+          n.parent = '/';
+          await this._putNode(n);
+          report.repaired++;
+        }
+        if (n.type !== 'folder') {
+          const blob = await this._readBlob(n.path);
+          if (!blob) {
+            report.missingBlobs++;
+          } else if (blob.size !== n.size && n.size > 0) {
+            n.size = blob.size;
+            n.modified = Date.now();
+            await this._putNode(n);
+            report.repaired++;
+          }
+        }
+      }
+      const allBlobs = await new Promise((resolve, reject) => {
+        const req = this._tx(['blobs']).objectStore('blobs').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+      for (const b of allBlobs) {
+        if (!nodePaths.has(b.path)) {
+          report.orphanBlobs++;
+          await this._deleteBlob(b.path);
+          report.repaired++;
+        }
+      }
+    } catch(e) {
+      console.warn('[青丝] 完整性校验出错:', e);
+    }
+    return report;
+  }
+
+  getTrash() {
+    return this._trash.slice();
   }
 }
 
@@ -2117,6 +3225,22 @@ function fmtRelTime(ts) {
   return fmtTime(ts);
 }
 
+function getMimeType(filename) {
+  const ext = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '';
+  const map = {
+    '.txt': 'text/plain', '.md': 'text/markdown', '.html': 'text/html', '.htm': 'text/html',
+    '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
+    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
+    '.webp': 'image/webp', '.svg': 'image/svg+xml', '.bmp': 'image/bmp', '.ico': 'image/x-icon',
+    '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4',
+    '.mp4': 'video/mp4', '.webm': 'video/webm', '.mkv': 'video/x-matroska',
+    '.pdf': 'application/pdf', '.zip': 'application/zip',
+    '.doc': 'application/msword', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel', '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  };
+  return map[ext] || 'application/octet-stream';
+}
+
 function getIconChar(node) {
   if (node.type === 'folder') return '册';
   if (node.type === 'image') return '画';
@@ -2141,7 +3265,7 @@ function toast(title, msg, type = 'info') {
   setTimeout(() => t.remove(), 3000);
 }
 
-function modal({ title, body, input, placeholder, defaultValue, onOk, okText = '允', cancelText = '罢' }) {
+function modal({ title, body, input, placeholder, defaultValue, onOk, okText = '允', cancelText = '罢', showCancel = true }) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
@@ -2152,8 +3276,8 @@ function modal({ title, body, input, placeholder, defaultValue, onOk, okText = '
         ${input ? `<input class="modal-input" type="text" placeholder="${placeholder || ''}" value="${defaultValue || ''}">` : ''}
       </div>
       <div class="modal-footer">
-        <button class="fm-btn cancel-btn">${cancelText}</button>
         <button class="fm-btn primary ok-btn">${okText}</button>
+        ${showCancel ? `<button class="fm-btn cancel-btn">${cancelText}</button>` : ''}
       </div>
     </div>
   `;
@@ -2161,7 +3285,8 @@ function modal({ title, body, input, placeholder, defaultValue, onOk, okText = '
   const inp = overlay.querySelector('.modal-input');
   if (inp) { inp.focus(); inp.select(); }
   const close = () => overlay.remove();
-  overlay.querySelector('.cancel-btn').onclick = close;
+  const cancelBtn = overlay.querySelector('.cancel-btn');
+  if (cancelBtn) cancelBtn.onclick = close;
   overlay.querySelector('.ok-btn').onclick = async () => {
     const val = inp ? inp.value : true;
     const result = onOk ? await onOk(val) : true;
@@ -2198,10 +3323,14 @@ class WindowManager {
     // 恢复上次窗口位置
     const saved = QingSi.prefs?.get('win:' + id);
     if (saved) {
-      win.style.left = saved.x + 'px';
-      win.style.top = Math.max(38, saved.y) + 'px';
-      win.style.width = saved.w + 'px';
-      win.style.height = saved.h + 'px';
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const clampX = Math.min(Math.max(0, saved.x), vw - 100);
+      const clampY = Math.min(Math.max(38, saved.y), vh - 100);
+      win.style.left = clampX + 'px';
+      win.style.top = clampY + 'px';
+      win.style.width = Math.min(saved.w, vw) + 'px';
+      win.style.height = Math.min(saved.h, vh - 38) + 'px';
     } else {
       win.style.left = (x ?? (window.innerWidth - width) / 2 + (Object.keys(QingSi.windows).length * 30)) + 'px';
       win.style.top = (y ?? (window.innerHeight - height) / 2 + (Object.keys(QingSi.windows).length * 30)) + 'px';
@@ -2209,13 +3338,27 @@ class WindowManager {
     
     win.innerHTML = `
       <div class="window-titlebar">
+        <div class="window-title">${title}</div>
         <div class="window-controls">
-          <div class="window-btn close" data-act="close">×</div>
-          <div class="window-btn min" data-act="min">−</div>
-          <div class="window-btn max" data-act="max">□</div>
+          <div class="window-scroll" data-act="min" data-label="隐">
+            <div class="scroll-outer-label">隐</div>
+            <div class="scroll-knob scroll-knob-top"></div>
+            <div class="scroll-paper"></div>
+            <div class="scroll-knob scroll-knob-bottom"></div>
+          </div>
+          <div class="window-scroll" data-act="max" data-label="展">
+            <div class="scroll-outer-label">展</div>
+            <div class="scroll-knob scroll-knob-top"></div>
+            <div class="scroll-paper"></div>
+            <div class="scroll-knob scroll-knob-bottom"></div>
+          </div>
+          <div class="window-scroll" data-act="close" data-label="阖">
+            <div class="scroll-outer-label">阖</div>
+            <div class="scroll-knob scroll-knob-top"></div>
+            <div class="scroll-paper"></div>
+            <div class="scroll-knob scroll-knob-bottom"></div>
+          </div>
         </div>
-        <div class="window-title" style="text-align:center">${title}</div>
-        <div style="width:60px"></div>
       </div>
       <div class="window-body"></div>
       <div class="resize-handle"></div>
@@ -2225,38 +3368,86 @@ class WindowManager {
     document.body.appendChild(win);
     QingSi.windows[id] = { el: win, id, title };
     
-    win.querySelector('[data-act="close"]').onclick = () => this.close(id);
-    win.querySelector('[data-act="max"]').onclick = () => this.maximize(id);
-    win.querySelector('[data-act="min"]').onclick = () => win.style.display = 'none';
+    win.querySelector('[data-act="close"]').onclick = function() {
+      const scroll = this;
+      scroll.classList.add('pulse');
+      scroll.classList.add('open');
+      setTimeout(() => {
+        WindowManager.close(id);
+      }, 350);
+    };
+    win.querySelector('[data-act="max"]').onclick = function() {
+      const scroll = this;
+      scroll.classList.add('pulse');
+      scroll.classList.add('open');
+      setTimeout(() => {
+        WindowManager.maximize(id);
+        setTimeout(() => scroll.classList.remove('open'), 300);
+      }, 250);
+    };
+    win.querySelector('[data-act="min"]').onclick = function() {
+      const scroll = this;
+      scroll.classList.add('pulse');
+      scroll.classList.add('open');
+      setTimeout(() => {
+        win.style.display = 'none';
+        setTimeout(() => scroll.classList.remove('open'), 300);
+      }, 250);
+    };
     
     win.addEventListener('mousedown', () => this.activate(id));
     
     this._makeDraggable(win, id);
     this._makeResizable(win, id);
     this.activate(id);
+
+    // 卷轴展开动画
+    win.classList.add('scroll-opening');
+    win.addEventListener('animationend', function handler(e) {
+      if (e.animationName === 'scrollOpen') {
+        win.classList.remove('scroll-opening');
+        win.removeEventListener('animationend', handler);
+      }
+    });
     
     document.querySelector(`.dock-item[data-app="${id}"]`)?.classList.add('active');
+    WindowManager._saveOpenWindows();
     return QingSi.windows[id];
   }
 
   static close(id) {
     const w = QingSi.windows[id];
     if (!w) return;
-    // 保存窗口位置
+    const el = w.el;
+    let saveX, saveY, saveW, saveH;
+    if (el.dataset.maximized) {
+      const s = JSON.parse(el.dataset.maximized);
+      saveX = parseInt(s.left) || 0;
+      saveY = parseInt(s.top) || 38;
+      saveW = parseInt(s.width) || el.offsetWidth;
+      saveH = parseInt(s.height) || el.offsetHeight;
+    } else {
+      saveX = parseInt(el.style.left) || 0;
+      saveY = parseInt(el.style.top) || 38;
+      saveW = el.offsetWidth;
+      saveH = el.offsetHeight;
+    }
     QingSi.prefs?.set('win:' + id, {
-      x: parseInt(w.el.style.left),
-      y: parseInt(w.el.style.top),
-      w: w.el.offsetWidth,
-      h: w.el.offsetHeight
+      x: saveX, y: saveY, w: saveW, h: saveH
     });
-    w.el.style.transition = 'opacity 0.2s, transform 0.2s';
-    w.el.style.opacity = '0';
-    w.el.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-      w.el.remove();
-      delete QingSi.windows[id];
-      document.querySelector(`.dock-item[data-app="${id}"]`)?.classList.remove('active');
-    }, 200);
+    el.style.transition = '';
+    el.style.opacity = '';
+    el.style.transform = '';
+    el.classList.add('scroll-closing');
+    el.addEventListener('animationend', function handler(e) {
+      if (e.animationName === 'scrollClose') {
+        el.remove();
+        delete QingSi.windows[id];
+        document.querySelector(`.dock-item[data-app="${id}"]`)?.classList.remove('active');
+        WindowManager._saveOpenWindows();
+        el.removeEventListener('animationend', handler);
+      }
+    });
   }
 
   static activate(id) {
@@ -2291,19 +3482,29 @@ class WindowManager {
   static _makeDraggable(win, id) {
     const titlebar = win.querySelector('.window-titlebar');
     let isDown = false, startX, startY, startLeft, startTop;
-    titlebar.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.window-btn')) return;
+
+    function onStart(cx, cy) {
       isDown = true;
-      startX = e.clientX; startY = e.clientY;
-      startLeft = parseInt(win.style.left); startTop = parseInt(win.style.top);
-      e.preventDefault();
-    });
-    document.addEventListener('mousemove', (e) => {
+      startX = cx; startY = cy;
+      if (win.dataset.maximized) {
+        const s = JSON.parse(win.dataset.maximized);
+        const ratio = (cx - parseInt(win.style.left)) / win.offsetWidth;
+        const oldW = parseInt(s.width) || 720;
+        win.style.left = (cx - oldW * ratio) + 'px';
+        win.style.top = '38px';
+        win.style.width = s.width;
+        win.style.height = s.height;
+        delete win.dataset.maximized;
+      }
+      startLeft = parseInt(win.style.left) || 0;
+      startTop = parseInt(win.style.top) || 0;
+    }
+    function onMove(cx, cy) {
       if (!isDown) return;
-      win.style.left = (startLeft + e.clientX - startX) + 'px';
-      win.style.top = Math.max(38, startTop + e.clientY - startY) + 'px';
-    });
-    document.addEventListener('mouseup', () => {
+      win.style.left = (startLeft + cx - startX) + 'px';
+      win.style.top = Math.max(38, startTop + cy - startY) + 'px';
+    }
+    function onEnd() {
       if (isDown && id) {
         QingSi.prefs?.set('win:' + id, {
           x: parseInt(win.style.left), y: parseInt(win.style.top),
@@ -2311,25 +3512,56 @@ class WindowManager {
         });
       }
       isDown = false;
+    }
+
+    // 鼠标事件
+    titlebar.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.window-scroll')) return;
+      onStart(e.clientX, e.clientY);
+      e.preventDefault();
     });
+    document.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+    document.addEventListener('mouseup', () => onEnd());
+
+    // 触摸事件（移动端支持）
+    titlebar.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.window-scroll')) return;
+      const t = e.touches[0];
+      onStart(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      if (!isDown) return;
+      const t = e.touches[0];
+      onMove(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchend', () => onEnd());
   }
 
   static _makeResizable(win, id) {
     const handle = win.querySelector('.resize-handle');
     let isDown = false, startX, startY, startW, startH;
-    handle.addEventListener('mousedown', (e) => {
+
+    function onStart(cx, cy) {
       isDown = true;
-      startX = e.clientX; startY = e.clientY;
+      startX = cx; startY = cy;
+      if (win.dataset.maximized) {
+        const s = JSON.parse(win.dataset.maximized);
+        win.style.left = s.left;
+        win.style.top = s.top;
+        win.style.width = s.width;
+        win.style.height = s.height;
+        delete win.dataset.maximized;
+      }
       startW = win.offsetWidth; startH = win.offsetHeight;
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    document.addEventListener('mousemove', (e) => {
+    }
+    function onMove(cx, cy) {
       if (!isDown) return;
-      win.style.width = Math.max(360, startW + e.clientX - startX) + 'px';
-      win.style.height = Math.max(240, startH + e.clientY - startY) + 'px';
-    });
-    document.addEventListener('mouseup', () => {
+      win.style.width = Math.max(360, startW + cx - startX) + 'px';
+      win.style.height = Math.max(240, startH + cy - startY) + 'px';
+    }
+    function onEnd() {
       if (isDown && id) {
         QingSi.prefs?.set('win:' + id, {
           x: parseInt(win.style.left), y: parseInt(win.style.top),
@@ -2337,6 +3569,54 @@ class WindowManager {
         });
       }
       isDown = false;
+    }
+
+    // 鼠标事件
+    handle.addEventListener('mousedown', (e) => {
+      onStart(e.clientX, e.clientY);
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    document.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+    document.addEventListener('mouseup', () => onEnd());
+
+    // 触摸事件（移动端支持）
+    handle.addEventListener('touchstart', (e) => {
+      const t = e.touches[0];
+      onStart(t.clientX, t.clientY);
+      e.preventDefault();
+      e.stopPropagation();
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      if (!isDown) return;
+      const t = e.touches[0];
+      onMove(t.clientX, t.clientY);
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchend', () => onEnd());
+  }
+
+  static _saveOpenWindows() {
+    const openIds = Object.keys(QingSi.windows);
+    QingSi.prefs?.set('win:open', openIds);
+  }
+
+  static restoreWindows() {
+    const openIds = QingSi.prefs?.get('win:open', []);
+    if (!Array.isArray(openIds) || openIds.length === 0) return;
+    const launchers = {
+      files: () => fileManager.open(),
+      editor: () => EditorApp.open(),
+      image: () => ImageApp.open(),
+      terminal: () => TerminalApp.open(),
+      storage: () => StorageApp.open(),
+      poem: () => PoemApp.open(),
+      settings: () => SettingsApp.open()
+    };
+    openIds.forEach(id => {
+      if (launchers[id]) {
+        try { launchers[id](); } catch(e) { console.warn('[青丝] 恢复窗口失败:', id, e); }
+      }
     });
   }
 }
@@ -2350,13 +3630,18 @@ class FileManagerApp {
     this.viewMode = 'grid';
     this.selected = new Set();
     this.clipboard = null;
+    this.history = ['/'];
+    this.historyIndex = 0;
+    this.sortBy = 'name';
+    this.sortAsc = true;
+    this.lastClickedPath = null;
   }
 
-  open() {
+  async open() {
     // 恢复上次状态
     this.viewMode = QingSi.prefs?.get('fm:viewMode', 'grid');
     this.currentPath = QingSi.prefs?.get('fm:lastPath', '/');
-    
+
     const root = document.createElement('div');
     root.style.cssText = 'flex:1;display:flex;width:100%;height:100%;';
     root.innerHTML = `
@@ -2364,8 +3649,9 @@ class FileManagerApp {
       <div class="fm-main">
         <div class="fm-toolbar">
           <button class="fm-btn" data-cmd="back">‹ 返</button>
+          <button class="fm-btn" data-cmd="forward">› 前</button>
           <button class="fm-btn" data-cmd="up">↑ 上</button>
-          <input class="fm-path" id="fm-path" value="/" readonly>
+          <div class="fm-breadcrumb" id="fm-breadcrumb"></div>
           <button class="fm-btn primary" data-cmd="newfolder">+ 新册</button>
           <button class="fm-btn primary" data-cmd="newfile">+ 新笺</button>
           <button class="fm-btn" data-cmd="upload">⇪ 拓</button>
@@ -2386,7 +3672,7 @@ class FileManagerApp {
     });
     
     this.refreshSidebar();
-    this.loadPath(this.currentPath);
+    await this.loadPath(this.currentPath);
     this.bindEvents(root);
     
     document.getElementById('fm-engine').textContent = 
@@ -2404,35 +3690,57 @@ class FileManagerApp {
   }
 
   bindEvents(root) {
-    root.querySelector('[data-cmd="back"]').onclick = () => this.goUp();
+    root.querySelector('[data-cmd="back"]').onclick = () => this.goBack();
+    root.querySelector('[data-cmd="forward"]').onclick = () => this.goForward();
     root.querySelector('[data-cmd="up"]').onclick = () => this.goUp();
     root.querySelector('[data-cmd="newfolder"]').onclick = () => this.newFolder();
     root.querySelector('[data-cmd="newfile"]').onclick = () => this.newFile();
     root.querySelector('[data-cmd="upload"]').onclick = () => this.upload();
     root.querySelector('[data-cmd="view"]').onclick = () => this.toggleView();
-    
+
     const search = root.querySelector('#fm-search');
     search.oninput = (e) => this.search(e.target.value);
-    
+
     const content = root.querySelector('#fm-content');
     content.oncontextmenu = (e) => {
       if (e.target.closest('.fm-item, .fm-list-row')) return;
       e.preventDefault();
       this.showContextMenu(e.clientX, e.clientY, null);
     };
-    
-    content.ondragover = (e) => { e.preventDefault(); content.style.background = 'rgba(122,139,111,0.08)'; };
-    content.ondragleave = () => content.style.background = '';
+
+    content.ondragover = (e) => { e.preventDefault(); content.classList.add('fm-dragover'); };
+    content.ondragleave = (e) => {
+      if (!content.contains(e.relatedTarget)) content.classList.remove('fm-dragover');
+    };
     content.ondrop = async (e) => {
       e.preventDefault();
-      content.style.background = '';
-      const files = e.dataTransfer.files;
-      for (const f of files) await this.uploadFile(f);
+      content.classList.remove('fm-dragover');
+      const items = e.dataTransfer.items;
+      if (items) {
+        for (const item of items) {
+          const entry = item.webkitGetAsEntry?.();
+          if (entry) {
+            await this._uploadEntry(entry, this.currentPath);
+          } else if (item.kind === 'file') {
+            const file = item.getAsFile();
+            if (file) await this.uploadFile(file);
+          }
+        }
+      } else {
+        for (const f of e.dataTransfer.files) await this.uploadFile(f);
+      }
       this.refresh();
     };
+
+    // 键盘快捷键
+    root.addEventListener('keydown', (e) => this._handleKeyboard(e));
   }
 
   async refreshSidebar() {
+    // 防重入：如果上一次刷新还在进行中，跳过
+    if (this._sidebarRefreshing) return;
+    this._sidebarRefreshing = true;
+    try {
     const sidebar = document.getElementById('fm-sidebar');
     if (!sidebar) return;
     sidebar.innerHTML = '';
@@ -2469,6 +3777,7 @@ class FileManagerApp {
       for (const f of folders) {
         const item = document.createElement('div');
         item.className = 'fm-tree-item';
+        item.dataset.path = f.path;
         item.style.paddingLeft = (18 + depth * 14) + 'px';
         if (f.path === this.currentPath) item.classList.add('active');
         item.innerHTML = `<span class="arrow">▸</span> 册 ${f.name}`;
@@ -2480,46 +3789,57 @@ class FileManagerApp {
     
     const rootItem = document.createElement('div');
     rootItem.className = 'fm-tree-item';
+    rootItem.dataset.path = '/';
     if (this.currentPath === '/') rootItem.classList.add('active');
     rootItem.innerHTML = `<span class="arrow">▸</span> ⌂ 根目录`;
     rootItem.onclick = () => this.loadPath('/');
     sidebar.appendChild(rootItem);
     
     await buildTree('/', 1);
+    } finally {
+      this._sidebarRefreshing = false;
+    }
   }
 
-  async loadPath(path) {
-    this.currentPath = path;
-    this.selected.clear();
-    document.getElementById('fm-path').value = path;
-    
-    // 优先尝试缓存,瞬时渲染
-    const cached = await QingSi.cache?.listCached(path);
-    if (cached) {
-      this.render(cached);
-      this._updateStatus(cached);
+  async loadPath(path, addToHistory = true) {
+    try {
+      this.currentPath = path;
+      this.selected.clear();
+      this.lastClickedPath = null;
+
+      // 更新面包屑
+      this._updateBreadcrumb();
+
+      // 导航历史
+      if (addToHistory) {
+        this.history = this.history.slice(0, this.historyIndex + 1);
+        this.history.push(path);
+        this.historyIndex = this.history.length - 1;
+      }
+
+      // 优先尝试缓存
+      const cached = await QingSi.cache?.listCached(path);
+      if (cached) {
+        this.render(this._sortItems(cached));
+        this._updateStatus(cached);
+      }
+
+      // 真实数据后台加载
+      const children = await QingSi.fs.listChildren(path);
+      const sorted = this._sortItems(children);
+
+      QingSi.cache?.cacheList(path, children);
+
+      if (!cached || JSON.stringify(cached.map(c => c.path)) !== JSON.stringify(children.map(c => c.path))) {
+        this.render(sorted);
+      }
+      this._updateStatus(children);
+      this.refreshSidebar();
+
+      QingSi.prefs?.set('fm:lastPath', path);
+    } catch (e) {
+      toast('加载失败', e.message, 'error');
     }
-    
-    // 真实数据后台加载
-    const children = await QingSi.fs.listChildren(path);
-    children.sort((a, b) => {
-      if (a.type === 'folder' && b.type !== 'folder') return -1;
-      if (a.type !== 'folder' && b.type === 'folder') return 1;
-      return a.name.localeCompare(b.name);
-    });
-    
-    // 缓存
-    QingSi.cache?.cacheList(path, children);
-    
-    // 如果数据有变化才重新渲染
-    if (!cached || JSON.stringify(cached.map(c => c.path)) !== JSON.stringify(children.map(c => c.path))) {
-      this.render(children);
-    }
-    this._updateStatus(children);
-    this.refreshSidebar();
-    
-    // 记住路径
-    QingSi.prefs?.set('fm:lastPath', path);
   }
 
   _updateStatus(children) {
@@ -2558,14 +3878,33 @@ class FileManagerApp {
     
     content.querySelectorAll('.fm-item, .fm-list-row').forEach(el => {
       const path = el.dataset.path;
+      const type = el.dataset.type;
+
+      // Shift范围选择
       el.onclick = (e) => {
-        if (!e.ctrlKey && !e.metaKey) this.selected.clear();
-        if (this.selected.has(path)) this.selected.delete(path);
-        else this.selected.add(path);
+        const allPaths = Array.from(content.querySelectorAll('.fm-item, .fm-list-row')).map(x => x.dataset.path);
+        if (e.shiftKey && this.lastClickedPath) {
+          const lastIdx = allPaths.indexOf(this.lastClickedPath);
+          const curIdx = allPaths.indexOf(path);
+          if (lastIdx !== -1 && curIdx !== -1) {
+            const [start, end] = [Math.min(lastIdx, curIdx), Math.max(lastIdx, curIdx)];
+            if (!e.ctrlKey && !e.metaKey) this.selected.clear();
+            for (let i = start; i <= end; i++) this.selected.add(allPaths[i]);
+          }
+        } else if (!e.ctrlKey && !e.metaKey) {
+          this.selected.clear();
+          this.selected.add(path);
+        } else {
+          if (this.selected.has(path)) this.selected.delete(path);
+          else this.selected.add(path);
+        }
+        this.lastClickedPath = path;
         content.querySelectorAll('.selected').forEach(x => x.classList.remove('selected'));
         this.selected.forEach(p => content.querySelector(`[data-path="${p}"]`)?.classList.add('selected'));
       };
-      el.ondblclick = () => this.openItem(path, el.dataset.type);
+
+      el.ondblclick = () => this.openItem(path, type);
+
       el.oncontextmenu = (e) => {
         e.preventDefault();
         if (!this.selected.has(path)) {
@@ -2576,6 +3915,11 @@ class FileManagerApp {
         }
         this.showContextMenu(e.clientX, e.clientY, path);
       };
+
+      if (type === 'folder') {
+        el.ondragover = (e) => { e.preventDefault(); el.classList.add('fm-drop-target'); };
+        el.ondragleave = () => el.classList.remove('fm-drop-target');
+      }
     });
   }
 
@@ -2670,7 +4014,7 @@ class FileManagerApp {
     a.href = url;
     a.download = QingSi.fs._basename(path);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
   toggleView() {
@@ -2680,7 +4024,7 @@ class FileManagerApp {
   }
 
   refresh() {
-    this.loadPath(this.currentPath);
+    this.loadPath(this.currentPath, false);
   }
 
   async search(q) {
@@ -2694,7 +4038,7 @@ class FileManagerApp {
     document.querySelectorAll('.context-menu').forEach(m => m.remove());
     const menu = document.createElement('div');
     menu.className = 'context-menu';
-    
+
     const items = [];
     if (path) {
       items.push({ label: '开启', icon: '◎', action: async () => {
@@ -2703,17 +4047,19 @@ class FileManagerApp {
       }});
       items.push({ label: '重命', icon: '✎', action: () => this.rename(path) });
       items.push({ divider: true });
-      items.push({ label: '复', icon: '⎘', action: () => this.copy([path]) });
-      items.push({ label: '剪', icon: '✂', action: () => this.cut([path]) });
+      items.push({ label: '复', icon: '⎘', action: () => this.copy(Array.from(this.selected)) });
+      items.push({ label: '剪', icon: '✂', action: () => this.cut(Array.from(this.selected)) });
       if (this.clipboard) items.push({ label: '贴', icon: '⊕', action: () => this.paste() });
       items.push({ divider: true });
       items.push({ label: '下载', icon: '↓', action: async () => {
         const n = await QingSi.fs.getNode(path);
         if (n.type !== 'folder') this.download(path);
-        else toast('提示', '册暂不支持直接下载', 'info');
+        else this.downloadFolder(path);
       }});
       items.push({ divider: true });
-      items.push({ label: '弃', icon: '✕', action: () => this.delete([path]), danger: true });
+      items.push({ label: '详', icon: '☰', action: () => this.showProperties(path) });
+      items.push({ divider: true });
+      items.push({ label: '弃', icon: '✕', action: () => this.delete(Array.from(this.selected)), danger: true });
     } else {
       items.push({ label: '新册', icon: '+', action: () => this.newFolder() });
       items.push({ label: '新笺', icon: '+', action: () => this.newFile() });
@@ -2723,6 +4069,7 @@ class FileManagerApp {
         items.push({ label: '贴', icon: '⊕', action: () => this.paste() });
       }
       items.push({ divider: true });
+      items.push({ label: '序 · ' + {name:'名',size:'量',date:'时',type:'类'}[this.sortBy], icon: '⇅', action: () => this.cycleSort() });
       items.push({ label: '刷新', icon: '↻', action: () => this.refresh() });
     }
     
@@ -2803,6 +4150,186 @@ class FileManagerApp {
       }
       toast('已弃', '昔物已散', 'info');
       this.refresh();
+    });
+  }
+
+  // ── 导航历史 ──
+  goBack() {
+    if (this.historyIndex > 0) {
+      this.historyIndex--;
+      this.loadPath(this.history[this.historyIndex], false);
+    }
+  }
+
+  goForward() {
+    if (this.historyIndex < this.history.length - 1) {
+      this.historyIndex++;
+      this.loadPath(this.history[this.historyIndex], false);
+    }
+  }
+
+  // ── 面包屑导航 ──
+  _updateBreadcrumb() {
+    const bc = document.getElementById('fm-breadcrumb');
+    if (!bc) return;
+    const parts = this.currentPath === '/' ? [''] : this.currentPath.split('/').filter(Boolean);
+    let html = '<span class="bc-segment" data-path="/">⌂</span>';
+    let accumulated = '';
+    for (const p of parts) {
+      accumulated += '/' + p;
+      html += `<span class="bc-sep">›</span><span class="bc-segment" data-path="${accumulated}">${p}</span>`;
+    }
+    bc.innerHTML = html;
+    bc.querySelectorAll('.bc-segment').forEach(seg => {
+      seg.onclick = () => this.loadPath(seg.dataset.path);
+    });
+  }
+
+  // ── 排序 ──
+  _sortItems(items) {
+    const sorted = [...items];
+    sorted.sort((a, b) => {
+      // 文件夹始终优先
+      if (a.type === 'folder' && b.type !== 'folder') return -1;
+      if (a.type !== 'folder' && b.type === 'folder') return 1;
+      let cmp = 0;
+      switch (this.sortBy) {
+        case 'name': cmp = a.name.localeCompare(b.name, 'zh-CN'); break;
+        case 'size': cmp = (a.size || 0) - (b.size || 0); break;
+        case 'date': cmp = (a.modified || 0) - (b.modified || 0); break;
+        case 'type': cmp = (a.type || '').localeCompare(b.type || ''); break;
+      }
+      return this.sortAsc ? cmp : -cmp;
+    });
+    return sorted;
+  }
+
+  cycleSort() {
+    const modes = ['name', 'size', 'date', 'type'];
+    const idx = modes.indexOf(this.sortBy);
+    const nextIdx = (idx + 1) % modes.length;
+    // 轮完一圈回到第一个模式时，切换升降序
+    if (nextIdx === 0) {
+      this.sortAsc = !this.sortAsc;
+    }
+    this.sortBy = modes[nextIdx];
+    this.refresh();
+  }
+
+  // ── 键盘快捷键 ──
+  _handleKeyboard(e) {
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.key === 'a') {
+      e.preventDefault();
+      const content = document.getElementById('fm-content');
+      if (!content) return;
+      content.querySelectorAll('.fm-item, .fm-list-row').forEach(el => {
+        this.selected.add(el.dataset.path);
+        el.classList.add('selected');
+      });
+    } else if (e.key === 'Delete') {
+      if (this.selected.size > 0) this.delete(Array.from(this.selected));
+    } else if (e.key === 'F2') {
+      e.preventDefault();
+      if (this.selected.size === 1) this.rename(Array.from(this.selected)[0]);
+    } else if (ctrl && e.key === 'c') {
+      if (this.selected.size > 0) this.copy(Array.from(this.selected));
+    } else if (ctrl && e.key === 'x') {
+      if (this.selected.size > 0) this.cut(Array.from(this.selected));
+    } else if (ctrl && e.key === 'v') {
+      if (this.clipboard) this.paste();
+    } else if (e.key === 'F5') {
+      e.preventDefault();
+      this.refresh();
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      this.goUp();
+    } else if (ctrl && e.key === 'f') {
+      e.preventDefault();
+      document.getElementById('fm-search')?.focus();
+    }
+  }
+
+  async _uploadEntry(entry, path) {
+    if (entry.isFile) {
+      return new Promise((resolve, reject) => {
+        entry.file(async (file) => {
+          try { await this.uploadFile(file); resolve(); }
+          catch(e) { reject(e); }
+        }, (err) => reject(err));
+      });
+    } else if (entry.isDirectory) {
+      const dirName = entry.name;
+      const dirPath = QingSi.fs._join(path, dirName);
+      try { await QingSi.fs.mkdir(dirPath, true); } catch(e) {}
+      const reader = entry.createReader();
+      const entries = await new Promise((resolve, reject) => {
+        const results = [];
+        const readBatch = () => {
+          reader.readEntries((batch) => {
+            if (batch.length === 0) resolve(results);
+            else { results.push(...batch); readBatch(); }
+          }, (err) => reject(err));
+        };
+        readBatch();
+      });
+      for (const e of entries) await this._uploadEntry(e, dirPath);
+    }
+  }
+
+  // ── 文件夹下载（打包） ──
+  async downloadFolder(path) {
+    toast('打包中', '正在为册打包...', 'info');
+    try {
+      const children = await QingSi.fs.listChildren(path);
+      // 简单实现：逐个下载文件（浏览器端无原生ZIP支持时）
+      // 使用 Blob 合并方式
+      const files = [];
+      const collectFiles = async (p) => {
+        const items = await QingSi.fs.listChildren(p);
+        for (const item of items) {
+          if (item.type === 'folder') await collectFiles(item.path);
+          else {
+            const blob = await QingSi.fs.readFile(item.path);
+            if (blob) files.push({ name: item.path, blob });
+          }
+        }
+      };
+      await collectFiles(path);
+      if (files.length === 0) { toast('空册', '此册无物可下', 'info'); return; }
+      // 逐个下载
+      for (const f of files) {
+        const url = URL.createObjectURL(f.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = QingSi.fs._basename(f.name);
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      }
+      toast('已下', `${files.length} 笺已下载`, 'success');
+    } catch (e) { toast('下载失败', e.message, 'error'); }
+  }
+
+  // ── 文件属性 ──
+  async showProperties(path) {
+    const node = await QingSi.fs.getNode(path);
+    if (!node) return toast('错', '找不到此物', 'error');
+    const size = node.size || 0;
+    const typeMap = { folder: '册（目录）', text: '文（文本）', image: '画（图像）', binary: '物（二进制）' };
+    const typeStr = typeMap[node.type] || node.type || '未知';
+    modal({
+      title: '物之属性',
+      body: `
+        <div style="line-height:2.2;font-family:'ZCOOL XiaoWei',serif;">
+          <div><strong>名讳：</strong>${node.name}</div>
+          <div><strong>路径：</strong>${node.path}</div>
+          <div><strong>类别：</strong>${typeStr}</div>
+          <div><strong>大小：</strong>${fmtSize(size)}</div>
+          <div><strong>修改于：</strong>${node.modified ? fmtTime(node.modified) : '—'}</div>
+          <div><strong>创建于：</strong>${node.created ? fmtTime(node.created) : '—'}</div>
+        </div>
+      `,
+      showCancel: false, okText: '知'
     });
   }
 }
@@ -2951,7 +4478,7 @@ const ImageApp = {
         <span class="editor-info" id="im-info">未择 · —</span>
       </div>
       <div class="image-viewer" id="im-view">
-        <div style="font-family:'Ma Shan Zheng',cursive;color:#a8b89a;font-size:48px;letter-spacing:0.3em;text-align:center;">
+        <div style="font-family:'Ma Shan Zheng',cursive;color:var(--willow-mist);font-size:48px;letter-spacing:0.3em;text-align:center;">
           画轩<br><span style="font-size:14px;letter-spacing:0.2em;">— 双击书阁中之画作以观 —</span>
         </div>
       </div>
@@ -3341,6 +4868,9 @@ const StorageApp = {
         <h3>操作</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="fm-btn" onclick="StorageApp.refresh()">↻ 刷新</button>
+          <button class="fm-btn primary" onclick="StorageApp.syncOPFSToIDB()">剑→盾 OPFS→IDB</button>
+          <button class="fm-btn primary" onclick="StorageApp.syncIDBToOPFS()">盾→剑 IDB→OPFS</button>
+          <button class="fm-btn" onclick="StorageApp.verify()">☰ 完整性校验</button>
           <button class="fm-btn" onclick="StorageApp.export()">↓ 导出全部</button>
           <button class="fm-btn" onclick="StorageApp.clearCache()">清空缓存</button>
           <button class="fm-btn danger" onclick="StorageApp.purge()">✕ 清空文件</button>
@@ -3387,6 +4917,27 @@ const StorageApp = {
   clearCache() {
     QingSi.cache?.invalidateAll();
     toast('已清', '缓存已洗',  'info');
+    this.refresh();
+  },
+  
+  async syncOPFSToIDB() {
+    const n = await QingSi.fs.syncOPFSToIDB();
+    toast('剑→盾', n > 0 ? `已同步 ${n} 个文件至 IndexedDB` : 'OPFS 与 IDB 已一致', 'success');
+  },
+  
+  async syncIDBToOPFS() {
+    const n = await QingSi.fs.syncIDBToOPFS();
+    toast('盾→剑', n > 0 ? `已同步 ${n} 个文件至 OPFS` : 'IDB 与 OPFS 已一致', 'success');
+  },
+  
+  async verify() {
+    const report = await QingSi.fs.verifyIntegrity();
+    const issues = report.orphanNodes + report.missingBlobs + report.orphanBlobs;
+    if (issues === 0) {
+      toast('校验通过', '四核数据完整无损', 'success');
+    } else {
+      toast('校验完成', `发现 ${issues} 处问题,已修复 ${report.repaired} 处`, 'info');
+    }
     this.refresh();
   },
   
@@ -3486,8 +5037,32 @@ const SettingsApp = {
     const autoDraft = QingSi.prefs?.get('autoDraft', true);
     const showWelcome = QingSi.prefs?.get('showWelcome', false);
     const syncTabs = QingSi.prefs?.get('syncTabs', true);
+    const darkMode = QingSi.prefs?.get('darkMode', false);
+    const currentFont = QingSi.prefs?.get('fontChoice', 'default');
     
     panel.innerHTML = `
+      <div class="settings-section">
+        <h3>外观 · 仪容</h3>
+        <div class="settings-row">
+          <div>
+            <div class="label">暗色模式</div>
+            <div class="desc">切换至墨色夜阑之境</div>
+          </div>
+          <div class="toggle ${darkMode ? 'on' : ''}" id="set-darkmode"></div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">字体选择</div>
+            <div class="desc">更换系统正文字体</div>
+          </div>
+          <select id="set-font" style="padding:6px 12px;background:var(--paper-deep);border:1px solid var(--ink-soft);font-family:var(--body-font,'Noto Serif SC',serif);font-size:13px;color:var(--ink);border-radius:2px;cursor:pointer;outline:none;">
+            <option value="default" ${currentFont === 'default' ? 'selected' : ''}>青丝原体 · 宋韵</option>
+            <option value="inter" ${currentFont === 'inter' ? 'selected' : ''}>Inter · 现代简约</option>
+            <option value="system" ${currentFont === 'system' ? 'selected' : ''}>系统自带 · 随机而安</option>
+          </select>
+        </div>
+      </div>
+
       <div class="settings-section">
         <h3>身份 · Cookie 守护</h3>
         <div class="settings-row">
@@ -3558,6 +5133,23 @@ const SettingsApp = {
         </div>
       </div>
     `;
+    
+    document.getElementById('set-darkmode').onclick = (e) => {
+      const cur = QingSi.prefs?.get('darkMode', false);
+      const next = !cur;
+      QingSi.prefs?.set('darkMode', next);
+      e.target.classList.toggle('on');
+      applyTheme();
+      toast(next ? '夜阑' : '昼明', next ? '已入暗色之境' : '已回光明之境', 'info');
+    };
+    
+    document.getElementById('set-font').onchange = (e) => {
+      const val = e.target.value;
+      QingSi.prefs?.set('fontChoice', val);
+      applyFont(val);
+      const names = { default: '青丝原体', inter: 'Inter 现代', system: '系统自带' };
+      toast('已换', `字体更替为「${names[val]}」`, 'success');
+    };
     
     document.getElementById('set-name').onchange = (e) => {
       QingSi.cookie?.set('user_name', e.target.value);
@@ -3665,10 +5257,165 @@ function bindAppLaunchers() {
   });
 }
 
+function showGlobalMenu(x, y, items) {
+  document.querySelectorAll('.context-menu').forEach(m => m.remove());
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.innerHTML = items.map(i =>
+    i.divider ? '<div class="ctx-divider"></div>' :
+    `<div class="ctx-item ${i.danger ? 'danger' : ''}" data-act="${i.label}"><span style="opacity:0.5">${i.icon}</span> ${i.label}</div>`
+  ).join('');
+  menu.style.left = Math.min(x, window.innerWidth - 180) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight - 300) + 'px';
+  document.body.appendChild(menu);
+  const realItems = items.filter(x => !x.divider);
+  menu.querySelectorAll('.ctx-item').forEach((el, i) => {
+    el.onclick = () => { realItems[i].action(); menu.remove(); };
+  });
+  setTimeout(() => {
+    document.addEventListener('click', () => menu.remove(), { once: true });
+  }, 10);
+}
+
+function bindGlobalContextMenus() {
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+
+    if (e.target.closest('.fm-content') || e.target.closest('.fm-item') || e.target.closest('.fm-list-row')) return;
+    if (e.target.closest('.context-menu')) return;
+
+    const launch = (app) => {
+      switch (app) {
+        case 'files': fileManager.open(); break;
+        case 'editor': EditorApp.open(); break;
+        case 'image': ImageApp.open(); break;
+        case 'terminal': TerminalApp.open(); break;
+        case 'storage': StorageApp.open(); break;
+        case 'poem': PoemApp.open(); break;
+        case 'settings': SettingsApp.open(); break;
+      }
+    };
+
+    const appNames = {
+      files: '书阁', editor: '笔砚', image: '画轩',
+      terminal: '符令', storage: '仓廪', poem: '诗笺', settings: '设阁'
+    };
+
+    const deskIcon = e.target.closest('.desk-icon');
+    if (deskIcon) {
+      const app = deskIcon.dataset.app;
+      showGlobalMenu(e.clientX, e.clientY, [
+        { label: '启 ' + (appNames[app] || ''), icon: '◎', action: () => launch(app) },
+        { divider: true },
+        { label: '略', icon: '☰', action: () => toast(appNames[app], '青丝 OS · 四核纪元', 'info') }
+      ]);
+      return;
+    }
+
+    const dockItem = e.target.closest('.dock-item');
+    if (dockItem) {
+      const app = dockItem.dataset.app;
+      const isOpen = !!QingSi.windows[app];
+      showGlobalMenu(e.clientX, e.clientY, [
+        { label: isOpen ? '转 ' + (appNames[app] || '') : '启 ' + (appNames[app] || ''), icon: '◎', action: () => launch(app) },
+        ...(isOpen ? [{ label: '阖', icon: '✕', action: () => WindowManager.close(app), danger: true }] : [])
+      ]);
+      return;
+    }
+
+    const topbar = e.target.closest('#topbar');
+    if (topbar) {
+      const dark = QingSi.prefs?.get('darkMode', false);
+      showGlobalMenu(e.clientX, e.clientY, [
+        { label: dark ? '昼明' : '夜阑', icon: dark ? '☀' : '☾', action: () => {
+          QingSi.prefs?.set('darkMode', !dark);
+          applyTheme();
+          toast(!dark ? '夜阑' : '昼明', !dark ? '已入暗色之境' : '已回光明之境', 'info');
+        }},
+        { divider: true },
+        { label: '设阁', icon: '⚙', action: () => launch('settings') }
+      ]);
+      return;
+    }
+
+    const sidebar = e.target.closest('.fm-sidebar');
+    if (sidebar) {
+      const treeItem = e.target.closest('.fm-tree-item');
+      if (treeItem) {
+        const path = treeItem.dataset.path;
+        showGlobalMenu(e.clientX, e.clientY, [
+          { label: '入', icon: '◎', action: () => { fileManager.currentPath = path; fileManager.refresh(); }},
+          { label: '新册', icon: '+', action: () => {
+            modal({ title: '新册', input: true, defaultValue: '未名册', onOk: async (name) => {
+              if (!name?.trim()) return;
+              try {
+                await QingSi.fs.mkdir(path + (path.endsWith('/') ? '' : '/') + name.trim());
+                fileManager.refresh();
+                toast('已建', name, 'success');
+              } catch(e) { toast('建册失败', e.message, 'error'); }
+            }});
+          }},
+          { divider: true },
+          { label: '刷新', icon: '↻', action: () => fileManager.refresh() }
+        ]);
+      } else {
+        showGlobalMenu(e.clientX, e.clientY, [
+          { label: '新册', icon: '+', action: () => fileManager.newFolder() },
+          { label: '新笺', icon: '+', action: () => fileManager.newFile() },
+          { divider: true },
+          { label: '刷新', icon: '↻', action: () => fileManager.refresh() }
+        ]);
+      }
+      return;
+    }
+
+    const windowEl = e.target.closest('.window');
+    if (windowEl) {
+      const winId = windowEl.id.replace('win-', '');
+      showGlobalMenu(e.clientX, e.clientY, [
+        { label: '隐', icon: '▬', action: () => { windowEl.style.display = 'none'; }},
+        { label: windowEl.dataset.maximized ? '还' : '展', icon: '▢', action: () => WindowManager.maximize(winId) },
+        { divider: true },
+        { label: '阖', icon: '✕', action: () => WindowManager.close(winId), danger: true }
+      ]);
+      return;
+    }
+
+    const desktop = e.target.closest('#desktop');
+    if (desktop) {
+      showGlobalMenu(e.clientX, e.clientY, [
+        { label: '书阁', icon: '册', action: () => launch('files') },
+        { label: '笔砚', icon: '墨', action: () => launch('editor') },
+        { label: '画轩', icon: '画', action: () => launch('image') },
+        { label: '符令', icon: '令', action: () => launch('terminal') },
+        { divider: true },
+        { label: '仓廪', icon: '仓', action: () => launch('storage') },
+        { label: '诗笺', icon: '诗', action: () => launch('poem') },
+        { divider: true },
+        { label: '设阁', icon: '设', action: () => launch('settings') },
+        { divider: true },
+        { label: QingSi.prefs?.get('darkMode', false) ? '昼明' : '夜阑', icon: QingSi.prefs?.get('darkMode', false) ? '☀' : '☾', action: () => {
+          const dark = QingSi.prefs?.get('darkMode', false);
+          QingSi.prefs?.set('darkMode', !dark);
+          applyTheme();
+          toast(!dark ? '夜阑' : '昼明', !dark ? '已入暗色之境' : '已回光明之境', 'info');
+        }}
+      ]);
+      return;
+    }
+
+    showGlobalMenu(e.clientX, e.clientY, [
+      { label: '设阁', icon: '设', action: () => launch('settings') }
+    ]);
+  });
+}
+
 async function updateStorageMeta() {
-  const s = await QingSi.fs.stats();
-  document.getElementById('storage-meta').textContent = 
-    `${s.fileCount} 笺 · ${fmtSize(s.totalSize)}`;
+  try {
+    const s = await QingSi.fs.stats();
+    document.getElementById('storage-meta').textContent = 
+      `${s.fileCount} 笺 · ${fmtSize(s.totalSize)}`;
+  } catch(e) { /* 静默忽略 */ }
 }
 
 function updateCoreLights() {
@@ -3676,6 +5423,20 @@ function updateCoreLights() {
     const el = document.getElementById('core-' + c);
     if (el) el.classList.toggle('active', QingSi.cores[c]);
   });
+}
+
+function checkProtocolBanner() {
+  if (location.protocol !== 'file:') return;
+  const banner = document.createElement('div');
+  banner.className = 'protocol-banner';
+  banner.innerHTML = `
+    <div class="banner-text">
+      <span class="banner-icon">⚠</span>
+      <span>当前以本地文件打开,四核部分能力受限 — OPFS 与 Cookie 不可用,IndexedDB 在 Firefox 下不可用。建议以本地服务器启动：<code style="background:rgba(255,255,255,0.15);padding:1px 6px;border-radius:2px;font-size:12px;">npx serve</code> 或 <code style="background:rgba(255,255,255,0.15);padding:1px 6px;border-radius:2px;font-size:12px;">python -m http.server</code></span>
+    </div>
+    <button class="banner-close" onclick="this.parentElement.remove()">知悉</button>
+  `;
+  document.body.appendChild(banner);
 }
 
 function showWelcomeIfNeeded() {
@@ -3722,6 +5483,23 @@ function showWelcomeIfNeeded() {
 }
 
 /* ============================================================
+   主题与字体切换
+   ============================================================ */
+function applyTheme() {
+  const dark = QingSi.prefs?.get('darkMode', false);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+
+function applyFont(choice) {
+  choice = choice || QingSi.prefs?.get('fontChoice', 'default');
+  if (choice === 'default') {
+    document.documentElement.removeAttribute('data-font');
+  } else {
+    document.documentElement.setAttribute('data-font', choice);
+  }
+}
+
+/* ============================================================
    启动流程
    ============================================================ */
 window.fileManager = fileManager;
@@ -3740,6 +5518,9 @@ window.QingSi = QingSi;
   QingSi.cores.ls = QingSi.prefs.available;
   QingSi.cores.ck = QingSi.cookie.available;
   QingSi.sync = new SyncManager();
+
+  applyTheme();
+  applyFont();
   
   document.getElementById('sc-3').classList.add('lit');
   await new Promise(r => setTimeout(r, 200));
@@ -3747,8 +5528,23 @@ window.QingSi = QingSi;
   await new Promise(r => setTimeout(r, 200));
   
   // 初始化主从核
-  QingSi.fs = new HybridFS();
-  await QingSi.fs.init();
+  try {
+    QingSi.fs = new HybridFS();
+    await QingSi.fs.init();
+  } catch (e) {
+    console.error('[青丝] 文件系统初始化失败:', e);
+    QingSi.cores.idb = false;
+    QingSi.cores.opfs = false;
+    // 尝试删除损坏的数据库并重试
+    try {
+      indexedDB.deleteDatabase('qingsi_fs');
+      QingSi.fs = new HybridFS();
+      await QingSi.fs.init();
+      console.log('[青丝] 文件系统重试成功');
+    } catch (e2) {
+      console.error('[青丝] 文件系统重试也失败:', e2);
+    }
+  }
   QingSi.cache = new CacheCoordinator(QingSi.prefs);
   
   document.getElementById('sc-2').classList.add('lit');
@@ -3759,6 +5555,7 @@ window.QingSi = QingSi;
   updateGreeting();
   spawnPetals();
   bindAppLaunchers();
+  bindGlobalContextMenus();
   updateStorageMeta();
   updateCoreLights();
   setInterval(updateStorageMeta, 5000);
@@ -3777,6 +5574,8 @@ window.QingSi = QingSi;
     splash.style.opacity = 0;
     setTimeout(() => {
       splash.remove();
+      checkProtocolBanner();
+      WindowManager.restoreWindows();
       showWelcomeIfNeeded();
     }, 800);
   }, 1800);
@@ -3784,6 +5583,27 @@ window.QingSi = QingSi;
   console.log('%c 青丝 OS · 四核纪元 ', 'background:#1c1a17;color:#b08a4a;padding:10px 30px;font-size:20px;font-family:serif;letter-spacing:0.5em;');
   console.log('%c [剑] OPFS  [盾] IndexedDB  [刃] localStorage  [笺] Cookie ', 'color:#7a8b6f;font-style:italic;letter-spacing:0.2em;');
   console.log('%c 「四核合璧,可纳乾坤,可守记忆,可通万域,可越时光。」', 'color:#a8553a;font-style:italic;');
+
+  window.addEventListener('beforeunload', () => {
+    WindowManager._saveOpenWindows();
+    Object.entries(QingSi.windows).forEach(([id, w]) => {
+      const el = w.el;
+      let saveX, saveY, saveW, saveH;
+      if (el.dataset.maximized) {
+        const s = JSON.parse(el.dataset.maximized);
+        saveX = parseInt(s.left) || 0;
+        saveY = parseInt(s.top) || 38;
+        saveW = parseInt(s.width) || el.offsetWidth;
+        saveH = parseInt(s.height) || el.offsetHeight;
+      } else {
+        saveX = parseInt(el.style.left) || 0;
+        saveY = parseInt(el.style.top) || 38;
+        saveW = el.offsetWidth;
+        saveH = el.offsetHeight;
+      }
+      QingSi.prefs?.set('win:' + id, { x: saveX, y: saveY, w: saveW, h: saveH });
+    });
+  });
 })();
 </script>
 
