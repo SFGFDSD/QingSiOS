@@ -2423,46 +2423,54 @@ class CookieManager {
   constructor() {
     this.prefix = 'qs_';
     this.available = navigator.cookieEnabled;
-    if (!this.available) console.warn('Cookie 不可用,羽信笺缺席');
+    this.isFile = location.protocol === 'file:';
+    if (!this.available && !this.isFile) console.warn('Cookie 不可用,羽信笺缺席');
   }
 
   set(key, value, options = {}) {
-    if (!this.available) return false;
-    const opts = {
-      path: '/',
-      maxAge: options.maxAge ?? 31536000, // 默认 1 年
-      sameSite: options.sameSite ?? 'Lax',
-      ...options
-    };
-    let str = `${this.prefix}${key}=${encodeURIComponent(value)}`;
-    str += `; path=${opts.path}`;
-    str += `; max-age=${opts.maxAge}`;
-    str += `; samesite=${opts.sameSite}`;
-    if (opts.secure) str += '; secure';
-    if (opts.domain) str += `; domain=${opts.domain}`;
-    document.cookie = str;
-    return true;
+    try {
+      // 本地文件协议下，自动降级使用 localStorage 代理 Cookie 功能
+      if (this.isFile && QingSi.prefs && QingSi.prefs.available) {
+        QingSi.prefs.set('ck_' + key, value);
+        return true;
+      }
+      if (!this.available) return false;
+      const opts = { path: '/', maxAge: options.maxAge ?? 31536000, sameSite: options.sameSite ?? 'Lax', ...options };
+      let str = `${this.prefix}${key}=${encodeURIComponent(value)}; path=${opts.path}; max-age=${opts.maxAge}; samesite=${opts.sameSite}`;
+      if (opts.secure) str += '; secure';
+      if (opts.domain) str += `; domain=${opts.domain}`;
+      document.cookie = str;
+      return true;
+    } catch(e) { return false; }
   }
 
   get(key, def = null) {
-    if (!this.available) return def;
-    const name = this.prefix + key + '=';
-    const cookies = document.cookie.split(';');
-    for (let c of cookies) {
-      c = c.trim();
-      if (c.startsWith(name)) {
-        return decodeURIComponent(c.slice(name.length));
+    try {
+      if (this.isFile && QingSi.prefs && QingSi.prefs.available) {
+        return QingSi.prefs.get('ck_' + key, def);
       }
-    }
-    return def;
+      if (!this.available) return def;
+      const name = this.prefix + key + '=';
+      const cookies = document.cookie.split(';');
+      for (let c of cookies) {
+        c = c.trim();
+        if (c.startsWith(name)) return decodeURIComponent(c.slice(name.length));
+      }
+      return def;
+    } catch(e) { return def; }
   }
 
   remove(key) {
-    if (!this.available) return;
-    document.cookie = `${this.prefix}${key}=; path=/; max-age=0`;
+    try {
+      if (this.isFile && QingSi.prefs && QingSi.prefs.available) {
+        QingSi.prefs.remove('ck_' + key);
+        return;
+      }
+      if (!this.available) return;
+      document.cookie = `${this.prefix}${key}=; path=/; max-age=0`;
+    } catch(e) {}
   }
 
-  // 标记一次性事件
   markOnce(key, days = 365) {
     this.set(key, '1', { maxAge: days * 86400 });
   }
@@ -2471,26 +2479,39 @@ class CookieManager {
     return this.get(key) === '1';
   }
 
-  // 列出所有青丝 cookie
   listAll() {
-    if (!this.available) return [];
-    const result = [];
-    const cookies = document.cookie.split(';');
-    for (let c of cookies) {
-      c = c.trim();
-      if (c.startsWith(this.prefix)) {
-        const eqIdx = c.indexOf('=');
-        result.push({
-          name: c.slice(this.prefix.length, eqIdx),
-          value: decodeURIComponent(c.slice(eqIdx + 1))
-        });
+    try {
+      if (this.isFile && QingSi.prefs && QingSi.prefs.available) {
+        const result = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('qs:pref:ck_')) {
+            result.push({
+              name: k.slice('qs:pref:ck_'.length),
+              value: QingSi.prefs.get(k.slice('qs:pref:'.length))
+            });
+          }
+        }
+        return result;
       }
-    }
-    return result;
+      if (!this.available) return [];
+      const result = [];
+      const cookies = document.cookie.split(';');
+      for (let c of cookies) {
+        c = c.trim();
+        if (c.startsWith(this.prefix)) {
+          const eqIdx = c.indexOf('=');
+          result.push({
+            name: c.slice(this.prefix.length, eqIdx),
+            value: decodeURIComponent(c.slice(eqIdx + 1))
+          });
+        }
+      }
+      return result;
+    } catch(e) { return []; }
   }
 
   purgeAll() {
-    if (!this.available) return;
     const all = this.listAll();
     for (const c of all) this.remove(c.name);
   }
@@ -5020,10 +5041,20 @@ const PoemApp = {
    App: 设阁(偏好管理)
    ============================================================ */
 const SettingsApp = {
+  panel: null,
   open() {
+    if (QingSi.windows.settings) {
+      WindowManager.activate('settings');
+      this.render();
+      return;
+    }
     const root = document.createElement('div');
     root.style.cssText = 'flex:1;display:flex;width:100%;height:100%;';
-    root.innerHTML = `<div class="settings-panel" id="settings-panel"></div>`;
+    
+    this.panel = document.createElement('div');
+    this.panel.className = 'settings-panel';
+    root.appendChild(this.panel);
+
     WindowManager.create({
       id: 'settings', title: '设阁 · 偏好',
       width: 600, height: 540, content: root
@@ -5032,7 +5063,8 @@ const SettingsApp = {
   },
   
   render() {
-    const panel = document.getElementById('settings-panel');
+    if (!this.panel) return;
+    const panel = this.panel;
     const userName = QingSi.cookie?.get('user_name') || '青丝主人';
     const autoDraft = QingSi.prefs?.get('autoDraft', true);
     const showWelcome = QingSi.prefs?.get('showWelcome', false);
@@ -5134,7 +5166,8 @@ const SettingsApp = {
       </div>
     `;
     
-    document.getElementById('set-darkmode').onclick = (e) => {
+    // 使用基于 panel 的局部查询，避免出现 DOM 重名冲突导致的空白失效
+    panel.querySelector('#set-darkmode').onclick = (e) => {
       const cur = QingSi.prefs?.get('darkMode', false);
       const next = !cur;
       QingSi.prefs?.set('darkMode', next);
@@ -5143,7 +5176,7 @@ const SettingsApp = {
       toast(next ? '夜阑' : '昼明', next ? '已入暗色之境' : '已回光明之境', 'info');
     };
     
-    document.getElementById('set-font').onchange = (e) => {
+    panel.querySelector('#set-font').onchange = (e) => {
       const val = e.target.value;
       QingSi.prefs?.set('fontChoice', val);
       applyFont(val);
@@ -5151,42 +5184,42 @@ const SettingsApp = {
       toast('已换', `字体更替为「${names[val]}」`, 'success');
     };
     
-    document.getElementById('set-name').onchange = (e) => {
+    panel.querySelector('#set-name').onchange = (e) => {
       QingSi.cookie?.set('user_name', e.target.value);
       toast('已记', e.target.value, 'success');
       updateGreeting();
     };
-    document.getElementById('set-forget').onclick = () => {
+    panel.querySelector('#set-forget').onclick = () => {
       QingSi.cookie?.remove('user_name');
       toast('已忘', '身份散去', 'info');
       this.render();
       updateGreeting();
     };
-    document.getElementById('set-draft').onclick = (e) => {
+    panel.querySelector('#set-draft').onclick = (e) => {
       const cur = QingSi.prefs?.get('autoDraft', true);
       QingSi.prefs?.set('autoDraft', !cur);
       e.target.classList.toggle('on');
     };
-    document.getElementById('set-sync').onclick = (e) => {
+    panel.querySelector('#set-sync').onclick = (e) => {
       const cur = QingSi.prefs?.get('syncTabs', true);
       QingSi.prefs?.set('syncTabs', !cur);
       e.target.classList.toggle('on');
     };
-    document.getElementById('set-welcome').onclick = (e) => {
+    panel.querySelector('#set-welcome').onclick = (e) => {
       const cur = QingSi.prefs?.get('showWelcome', false);
       QingSi.prefs?.set('showWelcome', !cur);
       QingSi.cookie?.remove('welcomed');
       e.target.classList.toggle('on');
       toast('已设', '下次开启时验证', 'info');
     };
-    document.getElementById('set-view').onclick = (e) => {
+    panel.querySelector('#set-view').onclick = (e) => {
       const cur = QingSi.prefs?.get('fm:viewMode', 'grid');
       const next = cur === 'grid' ? 'list' : 'grid';
       QingSi.prefs?.set('fm:viewMode', next);
       e.target.textContent = next === 'grid' ? '网格' : '列表';
       if (QingSi.windows.files) { fileManager.viewMode = next; fileManager.refresh(); }
     };
-    document.getElementById('set-purge-prefs').onclick = () => {
+    panel.querySelector('#set-purge-prefs').onclick = () => {
       confirm('清空偏好?', '所有自定义设置将丢失。', () => {
         QingSi.prefs?.purgeAll();
         toast('已清', '偏好归零', 'info');
@@ -5366,6 +5399,37 @@ function bindGlobalContextMenus() {
           { label: '刷新', icon: '↻', action: () => fileManager.refresh() }
         ]);
       }
+      return;
+    }
+
+    // 文本编辑区域右键菜单（textarea / input / contenteditable）
+    const textEl = (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.isContentEditable) ? e.target : null;
+    if (textEl) {
+      const selStart = textEl.selectionStart;
+      const selEnd = textEl.selectionEnd;
+      const hasSel = selStart !== undefined && selStart !== selEnd;
+      const hasVal = textEl.value !== undefined ? textEl.value.length > 0 : true;
+      const canUndo = textEl.tagName === 'TEXTAREA' || textEl.tagName === 'INPUT';
+      const items = [
+        { label: '撤', icon: '↩', action: () => document.execCommand('undo') },
+        { label: '重', icon: '↪', action: () => document.execCommand('redo') },
+        { divider: true },
+        { label: '剪', icon: '✂', action: () => { if (hasSel) document.execCommand('cut'); } },
+        { label: '复', icon: '⎘', action: () => { if (hasSel) document.execCommand('copy'); } },
+        { label: '贴', icon: '⊕', action: () => document.execCommand('paste') },
+        { divider: true },
+        { label: '全选', icon: '▣', action: () => { textEl.focus(); textEl.select(); } },
+        { divider: true },
+        { label: '删', icon: '⌫', action: () => {
+          if (hasSel && textEl.value !== undefined) {
+            const s = textEl.selectionStart, e2 = textEl.selectionEnd;
+            textEl.value = textEl.value.substring(0, s) + textEl.value.substring(e2);
+            textEl.selectionStart = textEl.selectionEnd = s;
+            textEl.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }},
+      ];
+      showGlobalMenu(e.clientX, e.clientY, items);
       return;
     }
 
