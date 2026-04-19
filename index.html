@@ -5416,7 +5416,19 @@ function bindGlobalContextMenus() {
         { divider: true },
         { label: '剪', icon: '✂', action: () => { if (hasSel) document.execCommand('cut'); } },
         { label: '复', icon: '⎘', action: () => { if (hasSel) document.execCommand('copy'); } },
-        { label: '贴', icon: '⊕', action: () => document.execCommand('paste') },
+        { label: '贴', icon: '⊕', action: async () => {
+          try {
+            const text = await navigator.clipboard.readText();
+            if (!text) return;
+            if (textEl.tagName === 'TEXTAREA' || textEl.tagName === 'INPUT') {
+              const s = textEl.selectionStart, e2 = textEl.selectionEnd;
+              textEl.setRangeText(text, s, e2, 'end');
+              textEl.dispatchEvent(new Event('input', { bubbles: true }));
+            } else if (textEl.isContentEditable) {
+              document.execCommand('insertText', false, text);
+            }
+          } catch(err) { /* 剪贴板权限被拒绝 */ }
+        }},
         { divider: true },
         { label: '全选', icon: '▣', action: () => { textEl.focus(); textEl.select(); } },
         { divider: true },
