@@ -165,20 +165,31 @@ html, body {
   display: flex;
   gap: 30px;
   font-family: 'ZCOOL XiaoWei', serif;
+  align-items: center;
+  line-height: 1;
 }
 
 #topbar .meta span { opacity: 0.85; }
-#topbar .meta .clock { color: var(--gold); }
+#topbar .meta .clock {
+  color: var(--gold);
+  display: inline-block;
+  min-width: 5.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
 
 #topbar .greeting {
   color: var(--willow-mist);
   font-style: italic;
+  line-height: 1;
 }
 
 #topbar .core-status {
   display: flex;
   gap: 6px;
   align-items: center;
+  line-height: 1;
 }
 
 .core-dot {
@@ -1998,6 +2009,10 @@ html, body {
   transition: opacity 0.8s;
 }
 
+[data-no-splash] #splash {
+  display: none !important;
+}
+
 #splash .splash-title {
   font-family: 'Ma Shan Zheng', cursive;
   font-size: 80px;
@@ -2125,6 +2140,17 @@ html, body {
 
 .welcome-card .name-input:focus { border-color: var(--gold); }
 </style>
+<script>
+// 在渲染前同步检查是否跳过加载动画，避免闪烁
+(function(){
+  try {
+    var v = localStorage.getItem('qs:pref:showSplash');
+    if (v !== null && JSON.parse(v) === false) {
+      document.documentElement.setAttribute('data-no-splash', 'true');
+    }
+  } catch(e){}
+})();
+</script>
 </head>
 <body>
 
@@ -2577,10 +2603,12 @@ class HybridFS {
     return path || '/';
   }
 
-  async _acquireLock(path) {
+  async _acquireLock(path, timeout = 10000) {
     const key = this._normalizePath(path);
+    const deadline = Date.now() + timeout;
     while (this._locks.has(key)) {
-      await this._locks.get(key);
+      if (Date.now() > deadline) throw new Error('获取锁超时: ' + key);
+      await Promise.race([this._locks.get(key), new Promise(r => setTimeout(r, 100))]);
     }
     let resolve;
     const promise = new Promise(r => resolve = r);
@@ -2744,16 +2772,19 @@ class HybridFS {
 
   async _writeBlob(path, data) {
     if (this.useOPFS) {
+      let writable;
       try {
         const handle = await this._getOPFSFile(path, true);
-        const writable = await handle.createWritable();
+        writable = await handle.createWritable();
         await writable.write(data);
         await writable.close();
+        writable = null;
         try {
           await this._syncBlobToIDB(path, data);
-        } catch(e) {}
+        } catch(e) { console.warn('[青丝] OPFS→IDB 同步失败:', e); }
         return;
       } catch (e) {
+        if (writable) { try { await writable.abort(); } catch(_) {} }
         console.warn('OPFS 写入失败,回退 IDB:', e);
       }
     }
@@ -2780,7 +2811,7 @@ class HybridFS {
           const file = await handle.getFile();
           if (file && file.size > 0) return file;
         }
-      } catch (e) {}
+      } catch (e) { console.warn('[青丝] OPFS 读取失败,回退 IDB:', path, e); }
     }
     return new Promise((resolve, reject) => {
       const req = this._tx(['blobs']).objectStore('blobs').get(path);
@@ -2805,17 +2836,18 @@ class HybridFS {
           if (!dir) break;
         }
         if (dir) await dir.removeEntry(fileName).catch(() => {});
-      } catch (e) {}
+      } catch (e) { console.warn('[青丝] OPFS 删除失败:', path, e); }
     }
     return new Promise((resolve) => {
       const req = this._tx(['blobs'], 'readwrite').objectStore('blobs').delete(path);
       req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
+      req.onerror = () => { console.warn('[青丝] IDB blob 删除失败:', path, req.error); resolve(); };
     });
   }
 
   async _getOPFSFile(path, create = false) {
     const parts = path.split('/').filter(Boolean);
+    if (parts.length === 0) throw new Error('OPFS 不支持根路径操作');
     const fileName = parts.pop();
     let dir = this.opfsRoot;
     for (const p of parts) {
@@ -2935,27 +2967,38 @@ class HybridFS {
   async delete(path) {
     path = this._normalizePath(path);
     if (!path || path === '/') throw new Error('不可删除根目录');
+    const enableTrash = QingSi.prefs?.get('enableTrash', false);
     const unlock = await this._acquireLock(path);
     try {
       const node = await this.getNode(path);
       if (!node) throw new Error('不存在: ' + path);
-      this._trash.push({ ...node, _trashedAt: Date.now() });
-      if (this._trash.length > 50) this._trash.shift();
-      try {
-        if (node.type === 'folder') {
-          const children = await this.listChildren(path);
-          for (const c of children) await this.delete(c.path);
-        } else {
-          await this._deleteBlob(path);
-        }
-        await this._deleteNodeMeta(path);
-        QingSi.prefs?.removeDraft(path);
-        QingSi.sync?.broadcast('fs:deleted', { path });
-        QingSi.cache?.invalidate(this._parentPath(path) || '/');
-      } catch (e) {
-        QingSi.cache?.invalidate(this._parentPath(path) || '/');
-        throw e;
+      // 回收站启用时保存 blob 数据以支持恢复
+      let savedBlob = null;
+      if (enableTrash && node.type !== 'folder') {
+        try { savedBlob = await this._readBlob(path); } catch(_) {}
       }
+      this._trash.push({ ...node, _trashedAt: Date.now(), _blob: savedBlob });
+      if (this._trash.length > 50) this._trash.shift();
+      if (node.type === 'folder') {
+        const children = await this.listChildren(path);
+        const errors = [];
+        for (const c of children) {
+          try { await this.delete(c.path); }
+          catch (e) { errors.push({ child: c.path, error: e.message }); }
+        }
+        if (errors.length > 0) {
+          console.warn(`[青丝] 删除文件夹 ${path} 时 ${errors.length} 个子项失败:`, errors);
+        }
+      } else {
+        await this._deleteBlob(path);
+      }
+      await this._deleteNodeMeta(path);
+      QingSi.prefs?.removeDraft(path);
+      QingSi.sync?.broadcast('fs:deleted', { path });
+      QingSi.cache?.invalidate(this._parentPath(path) || '/');
+    } catch (e) {
+      QingSi.cache?.invalidate(this._parentPath(path) || '/');
+      throw e;
     } finally {
       unlock();
     }
@@ -2963,16 +3006,21 @@ class HybridFS {
 
   async rename(oldPath, newName) {
     oldPath = this._normalizePath(oldPath);
-    const node = await this.getNode(oldPath);
-    if (!node) throw new Error('不存在');
-    if (!newName || !newName.trim()) throw new Error('新名不可为空');
-    newName = newName.trim();
-    if (/[\/\\:*?"<>|]/.test(newName)) throw new Error('文件名不合法: ' + newName);
-    const parent = this._parentPath(oldPath);
-    const newPath = this._join(parent, newName);
-    if (oldPath === newPath) return;
-    if (await this.exists(newPath)) throw new Error('新名已存在');
-    await this.move(oldPath, newPath);
+    const unlock = await this._acquireLock(oldPath);
+    try {
+      const node = await this.getNode(oldPath);
+      if (!node) throw new Error('不存在');
+      if (!newName || !newName.trim()) throw new Error('新名不可为空');
+      newName = newName.trim();
+      if (/[\/\\:*?"<>|]/.test(newName)) throw new Error('文件名不合法: ' + newName);
+      const parent = this._parentPath(oldPath);
+      const newPath = this._join(parent, newName);
+      if (oldPath === newPath) return;
+      if (await this.exists(newPath)) throw new Error('新名已存在');
+      await this.move(oldPath, newPath);
+    } finally {
+      unlock();
+    }
   }
 
   async move(oldPath, newPath) {
@@ -2980,8 +3028,12 @@ class HybridFS {
     newPath = this._normalizePath(newPath);
     if (oldPath === newPath) return;
     if (newPath.startsWith(oldPath + '/')) throw new Error('不可移入自身子目录');
-    const unlock = await this._acquireLock(oldPath);
-    const unlock2 = await this._acquireLock(newPath);
+    // 按字典序获取锁，避免 AB-BA 死锁
+    const [first, second] = oldPath < newPath ? [oldPath, newPath] : [newPath, oldPath];
+    const unlock1 = await this._acquireLock(first);
+    const unlock2 = await this._acquireLock(second);
+    const unlockOld = () => { oldPath < newPath ? unlock1() : unlock2(); };
+    const unlockNew = () => { oldPath < newPath ? unlock2() : unlock1(); };
     try {
       const node = await this.getNode(oldPath);
       if (!node) throw new Error('不存在: ' + oldPath);
@@ -2989,22 +3041,40 @@ class HybridFS {
       if (newParent && newParent !== '/' && !(await this.exists(newParent))) {
         await this.mkdir(newParent);
       }
-      if (await this.exists(newPath)) {
-        await this.delete(newPath);
-      }
       if (node.type === 'folder') {
         const children = await this.listChildren(oldPath);
+        const targetExists = await this.exists(newPath);
+        // 先移动所有内容到新位置
         await this._putNode({
           ...node, path: newPath, name: this._basename(newPath),
           parent: newParent, modified: Date.now()
         });
+        const movedChildren = [];
+        const errors = [];
         for (const c of children) {
-          await this.move(c.path, this._join(newPath, c.name));
+          try {
+            await this.move(c.path, this._join(newPath, c.name));
+            movedChildren.push(c);
+          } catch (e) {
+            errors.push({ child: c.path, error: e.message });
+          }
+        }
+        if (errors.length > 0) {
+          // 部分失败：回滚已移动的子节点
+          for (const c of movedChildren) {
+            try { await this.move(this._join(newPath, c.name), c.path); } catch(_) {}
+          }
+          await this._deleteNodeMeta(newPath);
+          if (targetExists) {
+            // 恢复被覆盖的目标
+          }
+          throw new Error(`移动文件夹失败: ${errors.length} 个子项移动失败`);
         }
         await this._deleteNodeMeta(oldPath);
       } else {
         const blob = await this._readBlob(oldPath);
         if (blob) await this._writeBlob(newPath, blob);
+        // 先确保新位置写入成功，再删除旧位置
         await this._deleteBlob(oldPath);
         await this._putNode({
           ...node, path: newPath, name: this._basename(newPath),
@@ -3016,8 +3086,8 @@ class HybridFS {
       QingSi.cache?.invalidate(this._parentPath(oldPath) || '/');
       QingSi.cache?.invalidate(newParent || '/');
     } finally {
-      unlock2();
-      unlock();
+      unlockNew();
+      unlockOld();
     }
   }
 
@@ -3026,7 +3096,10 @@ class HybridFS {
     destPath = this._normalizePath(destPath);
     if (srcPath === destPath) throw new Error('源与目标相同');
     if (destPath.startsWith(srcPath + '/')) throw new Error('不可复制到自身子目录');
-    const unlock = await this._acquireLock(destPath);
+    // 按字典序获取锁，避免死锁
+    const [first, second] = srcPath < destPath ? [srcPath, destPath] : [destPath, srcPath];
+    const unlock1 = await this._acquireLock(first);
+    const unlock2 = await this._acquireLock(second);
     try {
       const node = await this.getNode(srcPath);
       if (!node) throw new Error('源不存在: ' + srcPath);
@@ -3042,12 +3115,21 @@ class HybridFS {
         }
       } else {
         const blob = await this._readBlob(srcPath);
-        await this.writeFile(destPath, blob || new Blob(['']));
+        const data = blob || new Blob(['']);
+        await this._checkQuota(data.size);
+        await this._writeBlob(destPath, data);
+        const destName = this._basename(destPath);
+        const existing = await this.getNode(destPath);
+        await this._putNode({
+          path: destPath, name: destName, type: this._detectType(destName), parent: destParent,
+          created: existing?.created || Date.now(), modified: Date.now(), size: data.size, mime: data.type
+        });
       }
       QingSi.sync?.broadcast('fs:copied', { srcPath, destPath });
       QingSi.cache?.invalidate(destParent || '/');
     } finally {
-      unlock();
+      unlock2();
+      unlock1();
     }
   }
 
@@ -3187,6 +3269,46 @@ class HybridFS {
 
   getTrash() {
     return this._trash.slice();
+  }
+
+  async restoreFromTrash(index) {
+    const item = this._trash[index];
+    if (!item) throw new Error('回收站中无此物');
+    const parent = item.parent || '/';
+    if (parent && parent !== '/' && !(await this.exists(parent))) {
+      await this.mkdir(parent, true);
+    }
+    const destPath = item.path;
+    // 如果目标路径已存在，添加后缀
+    let finalPath = destPath;
+    if (await this.exists(destPath)) {
+      const name = item.name;
+      const dotIdx = name.lastIndexOf('.');
+      let i = 1;
+      while (await this.exists(finalPath)) {
+        if (dotIdx > 0) {
+          finalPath = this._join(parent, name.substring(0, dotIdx) + ` (恢复${i})` + name.substring(dotIdx));
+        } else {
+          finalPath = this._join(parent, name + ` (恢复${i})`);
+        }
+        i++;
+      }
+    }
+    if (item._blob) {
+      await this._writeBlob(finalPath, item._blob);
+    }
+    await this._putNode({
+      path: finalPath, name: item.name, type: item.type, parent,
+      created: item.created || Date.now(), modified: Date.now(), size: item.size || 0, mime: item.mime || ''
+    });
+    this._trash.splice(index, 1);
+    QingSi.sync?.broadcast('fs:created', { path: finalPath });
+    QingSi.cache?.invalidate(parent || '/');
+    return finalPath;
+  }
+
+  async emptyTrash() {
+    this._trash = [];
   }
 }
 
@@ -3817,12 +3939,28 @@ class FileManagerApp {
     sidebar.appendChild(rootItem);
     
     await buildTree('/', 1);
+
+    // 回收站入口
+    if (QingSi.prefs?.get('enableTrash', false)) {
+      const trashSep = document.createElement('div');
+      trashSep.style.cssText = 'height:1px;background:var(--border-subtle);margin:10px 8px;';
+      sidebar.appendChild(trashSep);
+
+      const trashCount = QingSi.fs.getTrash().length;
+      const trashItem = document.createElement('div');
+      trashItem.className = 'fm-tree-item';
+      trashItem.style.paddingLeft = '18px';
+      trashItem.innerHTML = `<span class="arrow">▸</span> 🗑 弃物阁${trashCount > 0 ? ` <span style="opacity:0.5;font-size:11px;">(${trashCount})</span>` : ''}`;
+      trashItem.onclick = () => this.showTrash();
+      sidebar.appendChild(trashItem);
+    }
     } finally {
       this._sidebarRefreshing = false;
     }
   }
 
   async loadPath(path, addToHistory = true) {
+    if (path === '__trash__') { this.showTrash(); return; }
     try {
       this.currentPath = path;
       this.selected.clear();
@@ -3968,6 +4106,7 @@ class FileManagerApp {
 
   goUp() {
     if (this.currentPath === '/') return;
+    if (this.currentPath === '__trash__') { this.loadPath('/'); return; }
     this.loadPath(QingSi.fs._parentPath(this.currentPath));
   }
 
@@ -4045,6 +4184,7 @@ class FileManagerApp {
   }
 
   refresh() {
+    if (this.currentPath === '__trash__') { this.showTrash(); return; }
     this.loadPath(this.currentPath, false);
   }
 
@@ -4164,13 +4304,91 @@ class FileManagerApp {
   }
 
   async delete(paths) {
-    confirm('忍弃此物?', `欲弃 ${paths.length} 项,弃则不返。`, async () => {
+    const enableTrash = QingSi.prefs?.get('enableTrash', false);
+    confirm('忍弃此物?', enableTrash ? `欲弃 ${paths.length} 项，将暂存于弃物阁。` : `欲弃 ${paths.length} 项,弃则不返。`, async () => {
       for (const p of paths) {
         try { await QingSi.fs.delete(p); }
         catch (e) { toast('错', e.message, 'error'); }
       }
-      toast('已弃', '昔物已散', 'info');
+      toast('已弃', enableTrash ? '已入弃物阁，尚可追悔' : '昔物已散', 'info');
       this.refresh();
+    });
+  }
+
+  showTrash() {
+    const content = document.getElementById('fm-content');
+    if (!content) return;
+    const trash = QingSi.fs.getTrash();
+    this.currentPath = '__trash__';
+    this.selected.clear();
+    this._updateBreadcrumb();
+
+    if (trash.length === 0) {
+      content.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--ink-soft);font-family:'Noto Serif SC',serif;">
+          <div style="font-size:48px;opacity:0.3;">🗑</div>
+          <div style="font-size:16px;">弃物阁空空如也</div>
+          <div style="font-size:12px;font-style:italic;opacity:0.6;">既已决意要毁，又何苦追悔莫及</div>
+        </div>`;
+      return;
+    }
+
+    let html = `<div style="padding:12px 16px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:13px;color:var(--ink-soft);">弃物阁 · ${trash.length} 件</span>
+      <button class="fm-btn danger" id="trash-empty" style="font-size:12px;padding:4px 12px;">清空弃物阁</button>
+    </div>`;
+    html += `<div style="padding:8px 16px;font-size:11px;color:var(--ink-soft);font-style:italic;font-family:'Noto Serif SC',serif;text-align:center;">
+      既已决意要毁，又何苦追悔莫及。然则人心善变，留一线余地，亦为慈悲。
+    </div>`;
+    html += '<div style="padding:0 8px;">';
+    trash.forEach((item, idx) => {
+      const time = item._trashedAt ? new Date(item._trashedAt).toLocaleString('zh-CN', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+      const hasBlob = !!item._blob;
+      html += `<div class="fm-list-row" data-trash-idx="${idx}" style="display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border-subtle);cursor:default;gap:12px;">
+        <span style="opacity:0.4;font-size:16px;">${item.type === 'folder' ? '册' : '笺'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${item.path}">${item.name}</div>
+          <div style="font-size:11px;color:var(--ink-soft);">${item.path} · ${time}${!hasBlob ? ' · <span style="color:var(--rust);">不可恢复</span>' : ''}</div>
+        </div>
+        <button class="fm-btn primary trash-restore" data-idx="${idx}" style="font-size:11px;padding:3px 10px;${!hasBlob ? 'opacity:0.3;pointer-events:none;' : ''}">复</button>
+        <button class="fm-btn danger trash-remove" data-idx="${idx}" style="font-size:11px;padding:3px 10px;">灭</button>
+      </div>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+
+    content.querySelector('#trash-empty')?.addEventListener('click', () => {
+      confirm('清空弃物阁?', '此为最终之决，不可追悔。', async () => {
+        await QingSi.fs.emptyTrash();
+        toast('已空', '弃物阁已清，尘埃落定', 'info');
+        this.showTrash();
+        this.refreshSidebar();
+      });
+    });
+
+    content.querySelectorAll('.trash-restore').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.dataset.idx);
+        try {
+          const restoredPath = await QingSi.fs.restoreFromTrash(idx);
+          toast('已复', `「${QingSi.fs._basename(restoredPath)}」已归原位`, 'success');
+          this.showTrash();
+          this.refreshSidebar();
+        } catch (e) { toast('复失败', e.message, 'error'); }
+      });
+    });
+
+    content.querySelectorAll('.trash-remove').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.dataset.idx);
+        const item = QingSi.fs.getTrash()[idx];
+        confirm('彻底毁灭?', `「${item?.name}」将灰飞烟灭，永不复返。`, async () => {
+          QingSi.fs._trash.splice(idx, 1);
+          toast('已灭', '尘埃落定', 'info');
+          this.showTrash();
+          this.refreshSidebar();
+        });
+      });
     });
   }
 
@@ -4193,6 +4411,11 @@ class FileManagerApp {
   _updateBreadcrumb() {
     const bc = document.getElementById('fm-breadcrumb');
     if (!bc) return;
+    if (this.currentPath === '__trash__') {
+      bc.innerHTML = '<span class="bc-segment" data-path="/">⌂</span><span class="bc-sep">›</span><span class="bc-segment">🗑 弃物阁</span>';
+      bc.querySelector('[data-path="/"]')?.addEventListener('click', () => this.loadPath('/'));
+      return;
+    }
     const parts = this.currentPath === '/' ? [''] : this.currentPath.split('/').filter(Boolean);
     let html = '<span class="bc-segment" data-path="/">⌂</span>';
     let accumulated = '';
@@ -5071,6 +5294,8 @@ const SettingsApp = {
     const syncTabs = QingSi.prefs?.get('syncTabs', true);
     const darkMode = QingSi.prefs?.get('darkMode', false);
     const currentFont = QingSi.prefs?.get('fontChoice', 'default');
+    const showSplash = QingSi.prefs?.get('showSplash', true);
+    const enableTrash = QingSi.prefs?.get('enableTrash', false);
     
     panel.innerHTML = `
       <div class="settings-section">
@@ -5136,6 +5361,21 @@ const SettingsApp = {
           </div>
           <div class="toggle ${showWelcome ? 'on' : ''}" id="set-welcome"></div>
         </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">加载动画</div>
+            <div class="desc">每次进入时显示青丝开屏卷轴</div>
+          </div>
+          <div class="toggle ${showSplash ? 'on' : ''}" id="set-splash"></div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">回收站</div>
+            <div class="desc">弃物暂存，可复可悔</div>
+            <div class="desc" style="margin-top:6px;font-size:11px;color:var(--rust);line-height:1.6;font-family:'Noto Serif SC',serif;">既已决意要毁，又何苦追悔莫及。<br>然则人心善变，留一线余地，亦为慈悲。</div>
+          </div>
+          <div class="toggle ${enableTrash ? 'on' : ''}" id="set-trash"></div>
+        </div>
       </div>
 
       <div class="settings-section">
@@ -5183,7 +5423,21 @@ const SettingsApp = {
       const names = { default: '青丝原体', inter: 'Inter 现代', system: '系统自带' };
       toast('已换', `字体更替为「${names[val]}」`, 'success');
     };
-    
+
+    panel.querySelector('#set-splash').onclick = (e) => {
+      const cur = QingSi.prefs?.get('showSplash', true);
+      QingSi.prefs?.set('showSplash', !cur);
+      e.target.classList.toggle('on');
+      toast(!cur ? '已启' : '已关', !cur ? '下次进入将显示加载动画' : '下次进入将跳过加载动画', 'info');
+    };
+
+    panel.querySelector('#set-trash').onclick = (e) => {
+      const cur = QingSi.prefs?.get('enableTrash', false);
+      QingSi.prefs?.set('enableTrash', !cur);
+      e.target.classList.toggle('on');
+      toast(!cur ? '已启' : '已关', !cur ? '弃物将暂存于回收站，可复可悔' : '此后弃物即灭，不留余地', 'info');
+    };
+
     panel.querySelector('#set-name').onchange = (e) => {
       QingSi.cookie?.set('user_name', e.target.value);
       toast('已记', e.target.value, 'success');
@@ -5286,7 +5540,19 @@ function bindAppLaunchers() {
     el.ondblclick = () => launch(el.dataset.app);
   });
   document.querySelectorAll('.dock-item').forEach(el => {
-    el.onclick = () => launch(el.dataset.app);
+    el.onclick = () => {
+      const app = el.dataset.app;
+      if (QingSi.windows[app]) {
+        const w = QingSi.windows[app];
+        if (w.el.style.display === 'none') {
+          WindowManager.activate(app);
+        } else {
+          w.el.style.display = 'none';
+        }
+      } else {
+        launch(app);
+      }
+    };
   });
 }
 
@@ -5645,8 +5911,9 @@ window.QingSi = QingSi;
   });
   
   // 关闭启动屏
-  setTimeout(() => {
+  function dismissSplash() {
     const splash = document.getElementById('splash');
+    if (!splash) return;
     splash.style.opacity = 0;
     setTimeout(() => {
       splash.remove();
@@ -5654,7 +5921,13 @@ window.QingSi = QingSi;
       WindowManager.restoreWindows();
       showWelcomeIfNeeded();
     }, 800);
-  }, 1800);
+  }
+
+  if (QingSi.prefs?.get('showSplash', true) === false) {
+    dismissSplash();
+  } else {
+    setTimeout(dismissSplash, 1800);
+  }
   
   console.log('%c 青丝 OS · 四核纪元 ', 'background:#1c1a17;color:#b08a4a;padding:10px 30px;font-size:20px;font-family:serif;letter-spacing:0.5em;');
   console.log('%c [剑] OPFS  [盾] IndexedDB  [刃] localStorage  [笺] Cookie ', 'color:#7a8b6f;font-style:italic;letter-spacing:0.2em;');
