@@ -24,7 +24,7 @@
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;600&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
 
@@ -74,9 +74,6 @@
   --text-shadow-light: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
-[data-font="inter"] {
-  --body-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
 [data-font="system"] {
   --body-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
@@ -3969,7 +3966,7 @@ class FileManagerApp {
       const trashItem = document.createElement('div');
       trashItem.className = 'fm-tree-item';
       trashItem.style.paddingLeft = '18px';
-      trashItem.innerHTML = `<span class="arrow">▸</span> 🗑 弃物阁${trashCount > 0 ? ` <span style="opacity:0.5;font-size:11px;">(${trashCount})</span>` : ''}`;
+      trashItem.innerHTML = `<span class="arrow">▸</span> 弃物阁${trashCount > 0 ? ` <span style="opacity:0.5;font-size:11px;">(${trashCount})</span>` : ''}`;
       trashItem.onclick = () => this.showTrash();
       sidebar.appendChild(trashItem);
     }
@@ -4344,10 +4341,10 @@ class FileManagerApp {
 
     if (trash.length === 0) {
       content.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--ink-soft);font-family:'Noto Serif SC',serif;">
-          <div style="font-size:48px;opacity:0.3;">🗑</div>
-          <div style="font-size:16px;">弃物阁空空如也</div>
-          <div style="font-size:12px;font-style:italic;opacity:0.6;">既已决意要毁，又何苦追悔莫及</div>
+        <div class="fm-empty">
+          <div class="big">弃</div>
+          <div class="text">弃物阁空空如也</div>
+          <div class="sub">既已决意要毁，又何苦追悔莫及</div>
         </div>`;
       return;
     }
@@ -4431,7 +4428,7 @@ class FileManagerApp {
     const bc = document.getElementById('fm-breadcrumb');
     if (!bc) return;
     if (this.currentPath === '__trash__') {
-      bc.innerHTML = '<span class="bc-segment" data-path="/">⌂</span><span class="bc-sep">›</span><span class="bc-segment">🗑 弃物阁</span>';
+      bc.innerHTML = '<span class="bc-segment" data-path="/">⌂</span><span class="bc-sep">›</span><span class="bc-segment">弃物阁</span>';
       bc.querySelector('[data-path="/"]')?.addEventListener('click', () => this.loadPath('/'));
       return;
     }
@@ -5315,7 +5312,8 @@ const SettingsApp = {
     const currentFont = QingSi.prefs?.get('fontChoice', 'default');
     const showSplash = QingSi.prefs?.get('showSplash', true);
     const enableTrash = QingSi.prefs?.get('enableTrash', false);
-    
+    const nativeCtx = QingSi.prefs?.get('nativeContextMenu', false);
+
     panel.innerHTML = `
       <div class="settings-section">
         <h3>外观 · 仪容</h3>
@@ -5333,8 +5331,7 @@ const SettingsApp = {
           </div>
           <select id="set-font" style="padding:6px 12px;background:var(--paper-deep);border:1px solid var(--ink-soft);font-family:var(--body-font,'Noto Serif SC',serif);font-size:13px;color:var(--ink);border-radius:2px;cursor:pointer;outline:none;">
             <option value="default" ${currentFont === 'default' ? 'selected' : ''}>青丝原体 · 宋韵</option>
-            <option value="inter" ${currentFont === 'inter' ? 'selected' : ''}>Inter · 现代简约</option>
-            <option value="system" ${currentFont === 'system' ? 'selected' : ''}>系统自带 · 随机而安</option>
+            <option value="system" ${currentFont === 'system' ? 'selected' : ''}>随缘 · 天生自成</option>
           </select>
         </div>
       </div>
@@ -5395,6 +5392,13 @@ const SettingsApp = {
           </div>
           <div class="toggle ${enableTrash ? 'on' : ''}" id="set-trash"></div>
         </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">原生右键</div>
+            <div class="desc">笔砚内使用浏览器原生右键菜单</div>
+          </div>
+          <div class="toggle ${nativeCtx ? 'on' : ''}" id="set-native-ctx"></div>
+        </div>
       </div>
 
       <div class="settings-section">
@@ -5439,7 +5443,7 @@ const SettingsApp = {
       const val = e.target.value;
       QingSi.prefs?.set('fontChoice', val);
       applyFont(val);
-      const names = { default: '青丝原体', inter: 'Inter 现代', system: '系统自带' };
+      const names = { default: '青丝原体', system: '随缘天生' };
       toast('已换', `字体更替为「${names[val]}」`, 'success');
     };
 
@@ -5455,6 +5459,13 @@ const SettingsApp = {
       QingSi.prefs?.set('enableTrash', !cur);
       e.target.classList.toggle('on');
       toast(!cur ? '已启' : '已关', !cur ? '弃物将暂存于回收站，可复可悔' : '此后弃物即灭，不留余地', 'info');
+    };
+
+    panel.querySelector('#set-native-ctx').onclick = (e) => {
+      const cur = QingSi.prefs?.get('nativeContextMenu', false);
+      QingSi.prefs?.set('nativeContextMenu', !cur);
+      e.target.classList.toggle('on');
+      toast(!cur ? '已启' : '已关', !cur ? '笔砚内将使用浏览器原生右键' : '已恢复青丝右键菜单', 'info');
     };
 
     panel.querySelector('#set-name').onchange = (e) => {
@@ -5597,10 +5608,54 @@ function showGlobalMenu(x, y, items) {
 
 function bindGlobalContextMenus() {
   document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-
     if (e.target.closest('.fm-content') || e.target.closest('.fm-item') || e.target.closest('.fm-list-row')) return;
     if (e.target.closest('.context-menu')) return;
+
+    // 文本编辑区域：开启原生右键时不拦截
+    const textEl = (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.isContentEditable) ? e.target : null;
+    if (textEl) {
+      if (QingSi.prefs?.get('nativeContextMenu', false)) return;
+      e.preventDefault();
+      const selStart = textEl.selectionStart;
+      const selEnd = textEl.selectionEnd;
+      const hasSel = selStart !== undefined && selStart !== selEnd;
+      const canUndo = textEl.tagName === 'TEXTAREA' || textEl.tagName === 'INPUT';
+      const items = [
+        { label: '撤', icon: '↩', action: () => document.execCommand('undo') },
+        { label: '重', icon: '↪', action: () => document.execCommand('redo') },
+        { divider: true },
+        { label: '剪', icon: '✂', action: () => { if (hasSel) document.execCommand('cut'); } },
+        { label: '复', icon: '⎘', action: () => { if (hasSel) document.execCommand('copy'); } },
+        { label: '贴', icon: '⊕', action: async () => {
+          try {
+            const text = await navigator.clipboard.readText();
+            if (!text) return;
+            if (textEl.tagName === 'TEXTAREA' || textEl.tagName === 'INPUT') {
+              const s = textEl.selectionStart, e2 = textEl.selectionEnd;
+              textEl.setRangeText(text, s, e2, 'end');
+              textEl.dispatchEvent(new Event('input', { bubbles: true }));
+            } else if (textEl.isContentEditable) {
+              document.execCommand('insertText', false, text);
+            }
+          } catch(err) { /* 剪贴板权限被拒绝 */ }
+        }},
+        { divider: true },
+        { label: '全选', icon: '▣', action: () => { textEl.focus(); textEl.select(); } },
+        { divider: true },
+        { label: '删', icon: '⌫', action: () => {
+          if (hasSel && textEl.value !== undefined) {
+            const s = textEl.selectionStart, e2 = textEl.selectionEnd;
+            textEl.value = textEl.value.substring(0, s) + textEl.value.substring(e2);
+            textEl.selectionStart = textEl.selectionEnd = s;
+            textEl.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }},
+      ];
+      showGlobalMenu(e.clientX, e.clientY, items);
+      return;
+    }
+
+    e.preventDefault();
 
     const launch = (app) => {
       switch (app) {
@@ -5687,48 +5742,6 @@ function bindGlobalContextMenus() {
       return;
     }
 
-    // 文本编辑区域右键菜单（textarea / input / contenteditable）
-    const textEl = (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.isContentEditable) ? e.target : null;
-    if (textEl) {
-      const selStart = textEl.selectionStart;
-      const selEnd = textEl.selectionEnd;
-      const hasSel = selStart !== undefined && selStart !== selEnd;
-      const hasVal = textEl.value !== undefined ? textEl.value.length > 0 : true;
-      const canUndo = textEl.tagName === 'TEXTAREA' || textEl.tagName === 'INPUT';
-      const items = [
-        { label: '撤', icon: '↩', action: () => document.execCommand('undo') },
-        { label: '重', icon: '↪', action: () => document.execCommand('redo') },
-        { divider: true },
-        { label: '剪', icon: '✂', action: () => { if (hasSel) document.execCommand('cut'); } },
-        { label: '复', icon: '⎘', action: () => { if (hasSel) document.execCommand('copy'); } },
-        { label: '贴', icon: '⊕', action: async () => {
-          try {
-            const text = await navigator.clipboard.readText();
-            if (!text) return;
-            if (textEl.tagName === 'TEXTAREA' || textEl.tagName === 'INPUT') {
-              const s = textEl.selectionStart, e2 = textEl.selectionEnd;
-              textEl.setRangeText(text, s, e2, 'end');
-              textEl.dispatchEvent(new Event('input', { bubbles: true }));
-            } else if (textEl.isContentEditable) {
-              document.execCommand('insertText', false, text);
-            }
-          } catch(err) { /* 剪贴板权限被拒绝 */ }
-        }},
-        { divider: true },
-        { label: '全选', icon: '▣', action: () => { textEl.focus(); textEl.select(); } },
-        { divider: true },
-        { label: '删', icon: '⌫', action: () => {
-          if (hasSel && textEl.value !== undefined) {
-            const s = textEl.selectionStart, e2 = textEl.selectionEnd;
-            textEl.value = textEl.value.substring(0, s) + textEl.value.substring(e2);
-            textEl.selectionStart = textEl.selectionEnd = s;
-            textEl.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-        }},
-      ];
-      showGlobalMenu(e.clientX, e.clientY, items);
-      return;
-    }
 
     const windowEl = e.target.closest('.window');
     if (windowEl) {
