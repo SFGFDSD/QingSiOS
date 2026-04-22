@@ -2990,10 +2990,29 @@ class HybridFS {
       if (!node) throw new Error('不存在: ' + path);
       // 回收站启用时保存 blob 数据以支持恢复
       let savedBlob = null;
-      if (enableTrash && node.type !== 'folder') {
-        try { savedBlob = await this._readBlob(path); } catch(_) {}
+      let savedChildren = null;
+      if (enableTrash) {
+        if (node.type !== 'folder') {
+          try { savedBlob = await this._readBlob(path); } catch(_) {}
+        } else {
+          // 递归收集文件夹内所有子节点的 blob，以便恢复
+          savedChildren = [];
+          const collectChildren = async (dirPath) => {
+            const children = await this.listChildren(dirPath);
+            for (const c of children) {
+              const entry = { ...c };
+              if (c.type === 'folder') {
+                await collectChildren(c.path);
+              } else {
+                try { entry._blob = await this._readBlob(c.path); } catch(_) {}
+              }
+              savedChildren.push(entry);
+            }
+          };
+          try { await collectChildren(path); } catch(_) {}
+        }
       }
-      this._trash.push({ ...node, _trashedAt: Date.now(), _blob: savedBlob });
+      this._trash.push({ ...node, _trashedAt: Date.now(), _blob: savedBlob, _children: savedChildren });
       if (this._trash.length > 50) this._trash.shift();
       if (node.type === 'folder') {
         const children = await this.listChildren(path);
@@ -3022,18 +3041,65 @@ class HybridFS {
 
   async rename(oldPath, newName) {
     oldPath = this._normalizePath(oldPath);
+    const node = await this.getNode(oldPath);
+    if (!node) throw new Error('不存在');
+    if (!newName || !newName.trim()) throw new Error('新名不可为空');
+    newName = newName.trim();
+    if (/[\/\\:*?"<>|]/.test(newName)) throw new Error('文件名不合法: ' + newName);
+    const parent = this._parentPath(oldPath);
+    const newPath = this._join(parent, newName);
+    if (oldPath === newPath) return;
+    if (await this.exists(newPath)) throw new Error('新名已存在');
+    // 内联重命名逻辑，避免调用 move() 导致锁嵌套死锁
     const unlock = await this._acquireLock(oldPath);
     try {
-      const node = await this.getNode(oldPath);
-      if (!node) throw new Error('不存在');
-      if (!newName || !newName.trim()) throw new Error('新名不可为空');
-      newName = newName.trim();
-      if (/[\/\\:*?"<>|]/.test(newName)) throw new Error('文件名不合法: ' + newName);
-      const parent = this._parentPath(oldPath);
-      const newPath = this._join(parent, newName);
-      if (oldPath === newPath) return;
-      if (await this.exists(newPath)) throw new Error('新名已存在');
-      await this.move(oldPath, newPath);
+      if (node.type === 'folder') {
+        const children = await this.listChildren(oldPath);
+        const newParent = this._parentPath(newPath);
+        // 更新文件夹节点
+        await this._putNode({ ...node, path: newPath, name: newName, parent: newParent, modified: Date.now() });
+        // 内联更新所有子节点路径（重命名只改路径前缀，不移动 blob）
+        const updatedChildren = [];
+        const errors = [];
+        const updateChildPaths = async (srcPrefix, dstPrefix) => {
+          const kids = await this.listChildren(srcPrefix);
+          for (const c of kids) {
+            try {
+              const relPath = c.path.substring(srcPrefix.length);
+              const newChildPath = dstPrefix + relPath;
+              const newChildParent = this._parentPath(newChildPath);
+              const updatedNode = { ...c, path: newChildPath, parent: newChildParent, modified: Date.now() };
+              await this._putNode(updatedNode);
+              updatedChildren.push({ oldPath: c.path, node: c, newPath: newChildPath });
+              if (c.type === 'folder') {
+                await updateChildPaths(c.path, newChildPath);
+              }
+            } catch (e) {
+              errors.push({ child: c.path, error: e.message });
+            }
+          }
+        };
+        await updateChildPaths(oldPath, newPath);
+        if (errors.length > 0) {
+          // 回滚：恢复所有已更新的子节点路径
+          for (const u of updatedChildren) {
+            try { await this._putNode(u.node); } catch(_) {}
+          }
+          await this._putNode(node); // 恢复原文件夹节点
+          throw new Error(`重命名文件夹失败: ${errors.length} 个子项更新失败`);
+        }
+        await this._deleteNodeMeta(oldPath);
+      } else {
+        const blob = await this._readBlob(oldPath);
+        if (blob) await this._writeBlob(newPath, blob);
+        await this._deleteBlob(oldPath);
+        const newParent = this._parentPath(newPath);
+        await this._putNode({ ...node, path: newPath, name: newName, parent: newParent, modified: Date.now() });
+        await this._deleteNodeMeta(oldPath);
+      }
+      QingSi.sync?.broadcast('fs:moved', { from: oldPath, to: newPath });
+      QingSi.cache?.invalidate(parent || '/');
+      QingSi.cache?.invalidate(this._parentPath(newPath) || '/');
     } finally {
       unlock();
     }
@@ -3060,6 +3126,11 @@ class HybridFS {
       if (node.type === 'folder') {
         const children = await this.listChildren(oldPath);
         const targetExists = await this.exists(newPath);
+        // 如果目标已存在，先保存目标节点以便回滚时恢复
+        let targetNodeBackup = null;
+        if (targetExists) {
+          targetNodeBackup = await this.getNode(newPath);
+        }
         // 先移动所有内容到新位置
         await this._putNode({
           ...node, path: newPath, name: this._basename(newPath),
@@ -3081,8 +3152,9 @@ class HybridFS {
             try { await this.move(this._join(newPath, c.name), c.path); } catch(_) {}
           }
           await this._deleteNodeMeta(newPath);
-          if (targetExists) {
-            // 恢复被覆盖的目标
+          if (targetNodeBackup) {
+            // 恢复被覆盖的目标节点
+            await this._putNode(targetNodeBackup);
           }
           throw new Error(`移动文件夹失败: ${errors.length} 个子项移动失败`);
         }
@@ -3317,6 +3389,32 @@ class HybridFS {
       path: finalPath, name: item.name, type: item.type, parent,
       created: item.created || Date.now(), modified: Date.now(), size: item.size || 0, mime: item.mime || ''
     });
+    // 如果是文件夹且有保存的子项，递归恢复
+    if (item.type === 'folder' && item._children && item._children.length > 0) {
+      // 计算路径前缀偏移：如果 finalPath 与原始 path 不同（加了后缀），需要替换前缀
+      const pathPrefix = item.path;
+      const newPrefix = finalPath;
+      for (const child of item._children) {
+        const childRelPath = child.path.substring(pathPrefix.length);
+        const childFinalPath = newPrefix + childRelPath;
+        const childParent = this._parentPath(childFinalPath);
+        if (child.type === 'folder') {
+          await this.mkdir(childFinalPath, true);
+          await this._putNode({
+            path: childFinalPath, name: child.name, type: child.type, parent: childParent,
+            created: child.created || Date.now(), modified: Date.now(), size: child.size || 0, mime: child.mime || ''
+          });
+        } else {
+          if (child._blob) {
+            await this._writeBlob(childFinalPath, child._blob);
+          }
+          await this._putNode({
+            path: childFinalPath, name: child.name, type: child.type, parent: childParent,
+            created: child.created || Date.now(), modified: Date.now(), size: child.size || 0, mime: child.mime || ''
+          });
+        }
+      }
+    }
     this._trash.splice(index, 1);
     QingSi.sync?.broadcast('fs:created', { path: finalPath });
     QingSi.cache?.invalidate(parent || '/');
@@ -4175,9 +4273,10 @@ class FileManagerApp {
     input.click();
   }
 
-  async uploadFile(file) {
+  async uploadFile(file, targetPath) {
     try {
-      await QingSi.fs.writeFile(QingSi.fs._join(this.currentPath, file.name), file);
+      const dir = targetPath || this.currentPath;
+      await QingSi.fs.writeFile(QingSi.fs._join(dir, file.name), file);
       toast('已纳入', file.name, 'success');
     } catch (e) { toast('上传失败', e.message, 'error'); }
   }
@@ -4514,7 +4613,7 @@ class FileManagerApp {
     if (entry.isFile) {
       return new Promise((resolve, reject) => {
         entry.file(async (file) => {
-          try { await this.uploadFile(file); resolve(); }
+          try { await this.uploadFile(file, path); resolve(); }
           catch(e) { reject(e); }
         }, (err) => reject(err));
       });
