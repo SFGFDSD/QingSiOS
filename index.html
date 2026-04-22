@@ -2886,8 +2886,26 @@ class HybridFS {
 
   _detectType(name) {
     const ext = name.split('.').pop().toLowerCase();
-    if (['png','jpg','jpeg','gif','webp','svg','bmp'].includes(ext)) return 'image';
-    if (['txt','md','json','js','css','html','xml','csv','log','yml','yaml'].includes(ext)) return 'text';
+    // 图像
+    if (['png','jpg','jpeg','gif','webp','svg','bmp','ico','tiff','tif','avif','apng'].includes(ext)) return 'image';
+    // 音频（浏览器可播放）
+    if (['mp3','wav','ogg','m4a','flac','aac','opus','mid','midi','au','snd'].includes(ext)) return 'audio';
+    // 视频（浏览器可播放）
+    if (['mp4','webm','ogv','m4v'].includes(ext)) return 'video';
+    // PDF
+    if (['pdf'].includes(ext)) return 'pdf';
+    // 文本（代码、配置、文档、网页等统一为 text）
+    if (['txt','md','markdown','rst','tex','log','adoc','asciidoc','org','wiki','textile',
+         'html','htm','xhtml','css','scss','sass','less','styl',
+         'js','ts','jsx','tsx','mjs','cjs',
+         'py','rb','go','rs','java','c','cpp','h','hpp','cs','php','swift','kt','scala',
+         'sh','bash','zsh','fish','ps1','bat','cmd',
+         'lua','r','pl','sql','dart','vue','svelte','asm','v','vhd','tcl','m','mm',
+         'json','json5','xml','yaml','yml','toml','ini','cfg','conf','env',
+         'csv','tsv','properties','gradle','cmake','lock',
+         'gitignore','editorconfig','eslintrc','prettierrc','babelrc','dockerfile','makefile'].includes(ext)) return 'text';
+    // 压缩包（实际可解压的格式）
+    if (['zip','tar','gz','tgz'].includes(ext)) return 'archive';
     return 'binary';
   }
 
@@ -3231,7 +3249,7 @@ class HybridFS {
   async stats() {
     const all = await this.getAllNodes();
     let totalSize = 0, fileCount = 0, folderCount = 0;
-    const typeCount = { text: 0, image: 0, binary: 0, folder: 0 };
+    const typeCount = { text: 0, image: 0, audio: 0, video: 0, pdf: 0, archive: 0, binary: 0, folder: 0 };
     for (const n of all) {
       if (n.path === '/') continue;
       typeCount[n.type] = (typeCount[n.type] || 0) + 1;
@@ -3485,15 +3503,52 @@ function fmtRelTime(ts) {
 function getMimeType(filename) {
   const ext = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '';
   const map = {
-    '.txt': 'text/plain', '.md': 'text/markdown', '.html': 'text/html', '.htm': 'text/html',
-    '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
+    // 文本
+    '.txt': 'text/plain', '.md': 'text/markdown', '.markdown': 'text/markdown',
+    '.html': 'text/html', '.htm': 'text/html', '.xhtml': 'application/xhtml+xml',
+    '.css': 'text/css', '.scss': 'text/x-scss', '.sass': 'text/x-sass', '.less': 'text/x-less', '.styl': 'text/x-stylus',
+    '.js': 'text/javascript', '.mjs': 'text/javascript', '.cjs': 'text/javascript',
+    '.ts': 'text/typescript', '.tsx': 'text/typescript', '.jsx': 'text/javascript',
+    '.json': 'application/json', '.json5': 'application/json',
+    '.xml': 'application/xml', '.svg': 'image/svg+xml',
+    '.csv': 'text/csv', '.tsv': 'text/tab-separated-values',
+    '.log': 'text/plain',
+    '.yaml': 'text/yaml', '.yml': 'text/yaml', '.toml': 'text/toml',
+    '.ini': 'text/plain', '.cfg': 'text/plain', '.conf': 'text/plain', '.env': 'text/plain',
+    '.rst': 'text/x-rst', '.tex': 'text/x-tex',
+    // 代码
+    '.py': 'text/x-python', '.rb': 'text/x-ruby', '.go': 'text/x-go',
+    '.rs': 'text/x-rust', '.java': 'text/x-java', '.c': 'text/x-c', '.cpp': 'text/x-c++',
+    '.h': 'text/x-c', '.hpp': 'text/x-c++', '.cs': 'text/x-csharp',
+    '.php': 'text/x-php', '.swift': 'text/x-swift', '.kt': 'text/x-kotlin',
+    '.scala': 'text/x-scala', '.lua': 'text/x-lua', '.r': 'text/x-r', '.pl': 'text/x-perl',
+    '.sql': 'text/x-sql', '.dart': 'text/x-dart', '.vue': 'text/x-vue', '.svelte': 'text/x-svelte',
+    '.sh': 'text/x-shellscript', '.bash': 'text/x-shellscript', '.zsh': 'text/x-shellscript',
+    '.fish': 'text/x-fish', '.ps1': 'text/x-powershell', '.bat': 'text/x-bat', '.cmd': 'text/x-cmd',
+    '.asm': 'text/x-asm', '.v': 'text/x-verilog', '.tcl': 'text/x-tcl',
+    '.m': 'text/x-objective-c', '.mm': 'text/x-objective-c++',
+    // 图像
     '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
-    '.webp': 'image/webp', '.svg': 'image/svg+xml', '.bmp': 'image/bmp', '.ico': 'image/x-icon',
-    '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4',
-    '.mp4': 'video/mp4', '.webm': 'video/webm', '.mkv': 'video/x-matroska',
-    '.pdf': 'application/pdf', '.zip': 'application/zip',
+    '.webp': 'image/webp', '.bmp': 'image/bmp', '.ico': 'image/x-icon',
+    '.tiff': 'image/tiff', '.tif': 'image/tiff', '.avif': 'image/avif', '.apng': 'image/apng',
+    // 音频（浏览器可播放）
+    '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg',
+    '.m4a': 'audio/mp4', '.flac': 'audio/flac', '.aac': 'audio/aac',
+    '.opus': 'audio/opus',
+    '.mid': 'audio/midi', '.midi': 'audio/midi',
+    '.au': 'audio/basic', '.snd': 'audio/basic',
+    // 视频（浏览器可播放）
+    '.mp4': 'video/mp4', '.webm': 'video/webm',
+    '.m4v': 'video/mp4', '.ogv': 'video/ogg',
+    // PDF
+    '.pdf': 'application/pdf',
+    // 压缩包（实际可解压）
+    '.zip': 'application/zip', '.tar': 'application/x-tar',
+    '.gz': 'application/gzip', '.tgz': 'application/gzip',
+    // Office（下载时正确识别）
     '.doc': 'application/msword', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     '.xls': 'application/vnd.ms-excel', '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.ppt': 'application/vnd.ms-powerpoint', '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   };
   return map[ext] || 'application/octet-stream';
 }
@@ -3501,7 +3556,11 @@ function getMimeType(filename) {
 function getIconChar(node) {
   if (node.type === 'folder') return '册';
   if (node.type === 'image') return '画';
+  if (node.type === 'audio') return '乐';
+  if (node.type === 'video') return '影';
+  if (node.type === 'pdf') return '卷';
   if (node.type === 'text') return '文';
+  if (node.type === 'archive') return '囊';
   return '物';
 }
 
@@ -4213,7 +4272,7 @@ class FileManagerApp {
         <div>${item.name}</div>
         <div>${item.type === 'folder' ? '—' : fmtSize(item.size || 0)}</div>
         <div>${fmtTime(item.modified)}</div>
-        <div>${item.type === 'folder' ? '册' : item.type === 'image' ? '画' : item.type === 'text' ? '文' : '物'}</div>
+        <div>${item.type === 'folder' ? '册' : item.type === 'image' ? '画' : item.type === 'audio' ? '乐' : item.type === 'video' ? '影' : item.type === 'pdf' ? '卷' : item.type === 'text' ? '文' : item.type === 'archive' ? '囊' : '物'}</div>
       </div>
     `;
   }
@@ -4229,6 +4288,10 @@ class FileManagerApp {
     if (type === 'folder') this.loadPath(path);
     else if (type === 'text') EditorApp.openFile(path);
     else if (type === 'image') ImageApp.openFile(path);
+    else if (type === 'audio') AudioApp.openFile(path);
+    else if (type === 'video') VideoApp.openFile(path);
+    else if (type === 'pdf') PdfApp.openFile(path);
+    else if (type === 'archive') ArchiveApp.openFile(path);
     else this.download(path);
   }
 
@@ -4674,7 +4737,7 @@ class FileManagerApp {
     const node = await QingSi.fs.getNode(path);
     if (!node) return toast('错', '找不到此物', 'error');
     const size = node.size || 0;
-    const typeMap = { folder: '册（目录）', text: '文（文本）', image: '画（图像）', binary: '物（二进制）' };
+    const typeMap = { folder: '册（目录）', text: '文（文本）', image: '画（图像）', audio: '乐（音频）', video: '影（视频）', pdf: '卷（PDF）', archive: '囊（压缩包）', binary: '物（二进制）' };
     const typeStr = typeMap[node.type] || node.type || '未知';
     modal({
       title: '物之属性',
@@ -4865,6 +4928,552 @@ const ImageApp = {
       QingSi.prefs?.recordAccess(path);
       WindowManager.activate('image');
     }, 50);
+  }
+};
+
+/* ============================================================
+   App: 乐坊 · 音频播放器(原生 HTML5 Audio)
+   ============================================================ */
+const AudioApp = {
+  currentUrl: null,
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="editor-toolbar">
+        <button class="fm-btn" id="au-open">开</button>
+        <span class="editor-info" id="au-info">未择 · —</span>
+      </div>
+      <div class="audio-viewer" id="au-view" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:hidden;">
+        <div style="font-family:'Ma Shan Zheng',cursive;color:var(--willow-mist);font-size:48px;letter-spacing:0.3em;text-align:center;">
+          乐坊<br><span style="font-size:14px;letter-spacing:0.2em;">— 双击书阁中之乐曲以聆 —</span>
+        </div>
+      </div>
+    `;
+    WindowManager.create({
+      id: 'audio', title: '乐坊 · 音频聆听',
+      width: 480, height: 360, content: root
+    });
+    root.querySelector('#au-open').onclick = () => {
+      modal({
+        title: '开启乐曲', input: true, defaultValue: '/乐曲/',
+        onOk: async (path) => this.openFile(path)
+      });
+    };
+  },
+
+  async openFile(path) {
+    if (!QingSi.windows.audio) this.open();
+    setTimeout(async () => {
+      const blob = await QingSi.fs.readFile(path);
+      if (!blob) return toast('错', '无此曲', 'error');
+      if (this.currentUrl) URL.revokeObjectURL(this.currentUrl);
+      this.currentUrl = URL.createObjectURL(blob);
+      const name = path.split('/').pop();
+      const view = document.querySelector('#au-view');
+      view.innerHTML = `
+        <div style="text-align:center;width:100%;">
+          <div style="font-family:'Ma Shan Zheng',cursive;font-size:28px;color:var(--gold);margin-bottom:16px;letter-spacing:0.2em;word-break:break-all;">${name}</div>
+          <audio controls autoplay style="width:100%;max-width:400px;outline:none;" id="au-player">
+            <source src="${this.currentUrl}">
+          </audio>
+        </div>
+      `;
+      document.querySelector('#au-info').textContent = `${path} · ${fmtSize(blob.size)}`;
+      QingSi.prefs?.recordAccess(path);
+      WindowManager.activate('audio');
+    }, 50);
+  }
+};
+
+/* ============================================================
+   App: 影阁 · 视频播放器(原生 HTML5 Video)
+   ============================================================ */
+const VideoApp = {
+  currentUrl: null,
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="editor-toolbar">
+        <button class="fm-btn" id="vi-open">开</button>
+        <span class="editor-info" id="vi-info">未择 · —</span>
+      </div>
+      <div class="video-viewer" id="vi-view" style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden;background:#000;">
+        <div style="font-family:'Ma Shan Zheng',cursive;color:var(--willow-mist);font-size:48px;letter-spacing:0.3em;text-align:center;">
+          影阁<br><span style="font-size:14px;letter-spacing:0.2em;">— 双击书阁中之影像以观 —</span>
+        </div>
+      </div>
+    `;
+    WindowManager.create({
+      id: 'video', title: '影阁 · 视频观赏',
+      width: 800, height: 560, content: root
+    });
+    root.querySelector('#vi-open').onclick = () => {
+      modal({
+        title: '开启影像', input: true, defaultValue: '/影像/',
+        onOk: async (path) => this.openFile(path)
+      });
+    };
+  },
+
+  async openFile(path) {
+    if (!QingSi.windows.video) this.open();
+    setTimeout(async () => {
+      const blob = await QingSi.fs.readFile(path);
+      if (!blob) return toast('错', '无此影', 'error');
+      if (this.currentUrl) URL.revokeObjectURL(this.currentUrl);
+      this.currentUrl = URL.createObjectURL(blob);
+      const name = path.split('/').pop();
+      const view = document.querySelector('#vi-view');
+      view.innerHTML = `<video controls autoplay style="max-width:100%;max-height:100%;outline:none;" id="vi-player"><source src="${this.currentUrl}"></video>`;
+      document.querySelector('#vi-info').textContent = `${path} · ${fmtSize(blob.size)}`;
+      QingSi.prefs?.recordAccess(path);
+      WindowManager.activate('video');
+    }, 50);
+  }
+};
+
+/* ============================================================
+   App: 卷轴 · PDF 查看器(原生 iframe/embed)
+   ============================================================ */
+const PdfApp = {
+  currentUrl: null,
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="editor-toolbar">
+        <button class="fm-btn" id="pd-open">开</button>
+        <span class="editor-info" id="pd-info">未择 · —</span>
+      </div>
+      <div class="pdf-viewer" id="pd-view" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <div style="font-family:'Ma Shan Zheng',cursive;color:var(--willow-mist);font-size:48px;letter-spacing:0.3em;text-align:center;">
+          卷轴<br><span style="font-size:14px;letter-spacing:0.2em;">— 双击书阁中之卷宗以阅 —</span>
+        </div>
+      </div>
+    `;
+    WindowManager.create({
+      id: 'pdf', title: '卷轴 · 卷宗阅览',
+      width: 800, height: 600, content: root
+    });
+    root.querySelector('#pd-open').onclick = () => {
+      modal({
+        title: '开启卷宗', input: true, defaultValue: '/卷宗/',
+        onOk: async (path) => this.openFile(path)
+      });
+    };
+  },
+
+  async openFile(path) {
+    if (!QingSi.windows.pdf) this.open();
+    setTimeout(async () => {
+      const blob = await QingSi.fs.readFile(path);
+      if (!blob) return toast('错', '无此卷', 'error');
+      if (this.currentUrl) URL.revokeObjectURL(this.currentUrl);
+      this.currentUrl = URL.createObjectURL(blob);
+      const name = path.split('/').pop();
+      const view = document.querySelector('#pd-view');
+      view.innerHTML = `<iframe src="${this.currentUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
+      document.querySelector('#pd-info').textContent = `${path} · ${fmtSize(blob.size)}`;
+      QingSi.prefs?.recordAccess(path);
+      WindowManager.activate('pdf');
+    }, 50);
+  }
+};
+
+/* ============================================================
+   压缩包解析工具（零依赖，使用原生 DecompressionStream）
+   ============================================================ */
+
+// 解析 ZIP 文件
+async function parseZip(buffer) {
+  const view = new DataView(buffer);
+  const entries = [];
+  
+  // 查找中央目录结束标记 (End of Central Directory)
+  let eocdOffset = buffer.byteLength - 22;
+  while (eocdOffset >= 0) {
+    if (view.getUint32(eocdOffset, true) === 0x06054b50) break;
+    eocdOffset--;
+  }
+  if (eocdOffset < 0) throw new Error('无效的 ZIP 文件');
+  
+  const cdOffset = view.getUint32(eocdOffset + 16, true);
+  const cdCount = view.getUint16(eocdOffset + 10, true);
+  
+  let pos = cdOffset;
+  for (let i = 0; i < cdCount; i++) {
+    if (view.getUint32(pos, true) !== 0x02014b50) break;
+    
+    const compression = view.getUint16(pos + 10, true);
+    const compressedSize = view.getUint32(pos + 20, true);
+    const uncompressedSize = view.getUint32(pos + 24, true);
+    const nameLen = view.getUint16(pos + 28, true);
+    const extraLen = view.getUint16(pos + 30, true);
+    const commentLen = view.getUint16(pos + 32, true);
+    const localOffset = view.getUint32(pos + 42, true);
+    
+    const name = new TextDecoder().decode(new Uint8Array(buffer, pos + 46, nameLen));
+    
+    // 跳过目录项
+    if (!name.endsWith('/')) {
+      entries.push({
+        name,
+        compression,
+        compressedSize,
+        uncompressedSize,
+        localOffset,
+        isFolder: false
+      });
+    }
+    
+    pos += 46 + nameLen + extraLen + commentLen;
+  }
+  
+  return entries;
+}
+
+// 解压 ZIP 单个文件
+async function extractZipEntry(buffer, entry) {
+  const view = new DataView(buffer);
+  const pos = entry.localOffset;
+  
+  // 跳过本地文件头
+  const nameLen = view.getUint16(pos + 26, true);
+  const extraLen = view.getUint16(pos + 28, true);
+  const dataOffset = pos + 30 + nameLen + extraLen;
+  
+  const compressedData = new Uint8Array(buffer, dataOffset, entry.compressedSize);
+  
+  // compression: 0=存储, 8=deflate
+  if (entry.compression === 0) {
+    return new Uint8Array(compressedData);
+  } else if (entry.compression === 8) {
+    // 使用原生 DecompressionStream
+    try {
+      const ds = new DecompressionStream('deflate-raw');
+      const writer = ds.writable.getWriter();
+      writer.write(compressedData);
+      writer.close();
+      
+      const reader = ds.readable.getReader();
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      
+      const result = new Uint8Array(entry.uncompressedSize);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return result;
+    } catch (e) {
+      // 回退：尝试不带 -raw 的 deflate
+      const ds = new DecompressionStream('deflate');
+      const writer = ds.writable.getWriter();
+      writer.write(compressedData);
+      writer.close();
+      
+      const reader = ds.readable.getReader();
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      
+      const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+      const result = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return result;
+    }
+  }
+  
+  throw new Error('不支持的压缩方式: ' + entry.compression);
+}
+
+// 解析 TAR 文件
+function parseTar(buffer) {
+  const entries = [];
+  const view = new Uint8Array(buffer);
+  let pos = 0;
+  
+  while (pos < buffer.byteLength - 512) {
+    // 检查是否为空块（文件结束）
+    let isEmpty = true;
+    for (let i = 0; i < 512; i++) {
+      if (view[pos + i] !== 0) { isEmpty = false; break; }
+    }
+    if (isEmpty) break;
+    
+    // 解析文件名（前100字节）
+    let nameEnd = 100;
+    while (nameEnd > 0 && view[pos + nameEnd - 1] === 0) nameEnd--;
+    const name = new TextDecoder().decode(view.slice(pos, pos + nameEnd));
+    
+    // 解析文件大小（八进制，124-135字节）
+    const sizeStr = new TextDecoder().decode(view.slice(pos + 124, pos + 136)).trim();
+    const size = parseInt(sizeStr, 8) || 0;
+    
+    // 解析类型标志（第156字节）
+    const typeFlag = String.fromCharCode(view[pos + 156]);
+    
+    if (name && typeFlag !== '5') { // 5=目录
+      entries.push({
+        name,
+        size,
+        offset: pos + 512,
+        isFolder: false
+      });
+    }
+    
+    // 移动到下一个条目（512字节头 + 数据向上取整到512）
+    pos += 512 + Math.ceil(size / 512) * 512;
+  }
+  
+  return entries;
+}
+
+// 解压 gzip
+async function decompressGzip(buffer) {
+  const ds = new DecompressionStream('gzip');
+  const writer = ds.writable.getWriter();
+  writer.write(new Uint8Array(buffer));
+  writer.close();
+  
+  const reader = ds.readable.getReader();
+  const chunks = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  
+  const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+/* ============================================================
+   App: 囊匣 · 压缩包查看/解压
+   ============================================================ */
+const ArchiveApp = {
+  currentPath: null,
+  currentEntries: [],
+  currentBuffer: null,
+  
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="editor-toolbar">
+        <button class="fm-btn" id="ar-open">开</button>
+        <button class="fm-btn primary" id="ar-extract" disabled>解压</button>
+        <span class="editor-info" id="ar-info">未择 · —</span>
+      </div>
+      <div class="archive-viewer" id="ar-view" style="flex:1;display:flex;flex-direction:column;padding:10px;overflow:auto;">
+        <div style="font-family:'Ma Shan Zheng',cursive;color:var(--willow-mist);font-size:48px;letter-spacing:0.3em;text-align:center;margin:auto;">
+          囊匣<br><span style="font-size:14px;letter-spacing:0.2em;">— 双击书阁中之囊物以览 —</span>
+        </div>
+      </div>
+    `;
+    WindowManager.create({
+      id: 'archive', title: '囊匣 · 压缩包',
+      width: 640, height: 480, content: root
+    });
+    root.querySelector('#ar-open').onclick = () => {
+      modal({
+        title: '开启囊物', input: true, defaultValue: '/囊物/',
+        onOk: async (path) => this.openFile(path)
+      });
+    };
+    root.querySelector('#ar-extract').onclick = () => this.extractAll();
+  },
+
+  async openFile(path) {
+    if (!QingSi.windows.archive) this.open();
+    setTimeout(async () => {
+      const blob = await QingSi.fs.readFile(path);
+      if (!blob) return toast('错', '无此囊', 'error');
+      
+      this.currentPath = path;
+      this.currentBuffer = await blob.arrayBuffer();
+      const ext = path.split('.').pop().toLowerCase();
+      
+      try {
+        let entries = [];
+        
+        if (ext === 'zip') {
+          entries = await parseZip(this.currentBuffer);
+        } else if (ext === 'tar') {
+          entries = parseTar(this.currentBuffer);
+        } else if (ext === 'gz' || ext === 'tgz') {
+          // 先解压 gzip，再判断是否为 tar
+          const decompressed = await decompressGzip(this.currentBuffer);
+          this.currentBuffer = decompressed.buffer;
+          
+          // 检查是否为 tar（tgz）
+          const tarName = path.replace(/\.(gz|tgz)$/i, '');
+          if (tarName.endsWith('.tar')) {
+            entries = parseTar(this.currentBuffer);
+          } else {
+            // 单文件 gzip
+            entries = [{
+              name: tarName.split('/').pop(),
+              size: decompressed.length,
+              singleFile: true
+            }];
+          }
+        }
+        
+        this.currentEntries = entries;
+        this.renderEntries(entries, path, blob.size);
+        document.querySelector('#ar-extract').disabled = entries.length === 0;
+        QingSi.prefs?.recordAccess(path);
+        WindowManager.activate('archive');
+      } catch (e) {
+        toast('错', '解析失败: ' + e.message, 'error');
+      }
+    }, 50);
+  },
+
+  renderEntries(entries, path, originalSize) {
+    const view = document.querySelector('#ar-view');
+    const totalSize = entries.reduce((s, e) => s + (e.uncompressedSize || e.size || 0), 0);
+    
+    document.querySelector('#ar-info').textContent = `${path} · ${entries.length} 项 · ${fmtSize(originalSize)}`;
+    
+    if (entries.length === 0) {
+      view.innerHTML = `<div style="text-align:center;color:var(--ink-soft);padding:20px;">空囊无物</div>`;
+      return;
+    }
+    
+    view.innerHTML = `
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">
+        共 ${entries.length} 项 · 解压后约 ${fmtSize(totalSize)}
+      </div>
+      <div class="archive-list" style="flex:1;overflow:auto;">
+        ${entries.map((e, i) => `
+          <div class="archive-item" data-idx="${i}" style="display:flex;align-items:center;padding:6px 8px;border-radius:4px;cursor:pointer;gap:8px;">
+            <span style="font-size:16px;color:var(--gold);">笺</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.name}</span>
+            <span style="font-size:11px;color:var(--ink-soft);">${fmtSize(e.uncompressedSize || e.size || 0)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    
+    // 双击预览单个文件
+    view.querySelectorAll('.archive-item').forEach(el => {
+      el.ondblclick = () => this.previewEntry(parseInt(el.dataset.idx));
+    });
+  },
+
+  async previewEntry(idx) {
+    const entry = this.currentEntries[idx];
+    if (!entry) return;
+    
+    try {
+      let data;
+      
+      if (entry.singleFile) {
+        data = new Uint8Array(this.currentBuffer);
+      } else if (entry.localOffset !== undefined) {
+        // ZIP
+        data = await extractZipEntry(this.currentBuffer, entry);
+      } else if (entry.offset !== undefined) {
+        // TAR
+        data = new Uint8Array(this.currentBuffer, entry.offset, entry.size);
+      }
+      
+      // 判断是否为文本
+      const ext = entry.name.split('.').pop().toLowerCase();
+      const textExts = ['txt','md','json','js','css','html','xml','csv','log','yml','yaml','ini','cfg','sh','py','rb','go','rs','java','c','cpp','h','sql','md','markdown'];
+      
+      if (textExts.includes(ext)) {
+        const text = new TextDecoder().decode(data);
+        modal({
+          title: entry.name,
+          body: `<pre style="max-height:400px;overflow:auto;white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.5;">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`,
+          showCancel: false, okText: '阖'
+        });
+      } else {
+        // 尝试作为图片预览
+        const imgExts = ['png','jpg','jpeg','gif','webp','svg','bmp'];
+        if (imgExts.includes(ext)) {
+          const blob = new Blob([data], { type: getMimeType(entry.name) });
+          const url = URL.createObjectURL(blob);
+          modal({
+            title: entry.name,
+            body: `<img src="${url}" style="max-width:100%;max-height:400px;">`,
+            showCancel: false, okText: '阖'
+          });
+        } else {
+          toast('提示', `${entry.name} · ${fmtSize(data.length)} · 双击解压后查看`, 'info');
+        }
+      }
+    } catch (e) {
+      toast('错', '预览失败: ' + e.message, 'error');
+    }
+  },
+
+  async extractAll() {
+    if (!this.currentEntries.length || !this.currentPath) return;
+    
+    const basePath = QingSi.fs._parentPath(this.currentPath);
+    const archiveName = this.currentPath.split('/').pop().replace(/\.[^.]+$/, '');
+    const targetDir = basePath + '/' + archiveName;
+    
+    confirm('解压确认', `将解压至 ${targetDir}/，共 ${this.currentEntries.length} 项`, async () => {
+      try {
+        await QingSi.fs.mkdir(targetDir, true);
+        let extracted = 0;
+        
+        for (const entry of this.currentEntries) {
+          try {
+            let data;
+            
+            if (entry.singleFile) {
+              data = new Uint8Array(this.currentBuffer);
+            } else if (entry.localOffset !== undefined) {
+              data = await extractZipEntry(this.currentBuffer, entry);
+            } else if (entry.offset !== undefined) {
+              data = new Uint8Array(this.currentBuffer, entry.offset, entry.size);
+            }
+            
+            if (data) {
+              const filePath = targetDir + '/' + entry.name;
+              // 确保父目录存在
+              const parentDir = QingSi.fs._parentPath(filePath);
+              await QingSi.fs.mkdir(parentDir, true);
+              await QingSi.fs.writeFile(filePath, data);
+              extracted++;
+            }
+          } catch (e) {
+            console.warn('解压失败:', entry.name, e);
+          }
+        }
+        
+        toast('解压完成', `已解压 ${extracted} 项至 ${targetDir}`, 'success');
+        QingSi.sync?.broadcast('fs:created', { path: targetDir, type: 'folder' });
+      } catch (e) {
+        toast('错', '解压失败: ' + e.message, 'error');
+      }
+    });
   }
 };
 
@@ -5210,6 +5819,10 @@ const StorageApp = {
         <div class="storage-stats">
           <div class="storage-stat"><span class="num">${s.typeCount.text || 0}</span><span class="lbl">文 · 文本</span></div>
           <div class="storage-stat"><span class="num">${s.typeCount.image || 0}</span><span class="lbl">画 · 图像</span></div>
+          <div class="storage-stat"><span class="num">${s.typeCount.audio || 0}</span><span class="lbl">乐 · 音频</span></div>
+          <div class="storage-stat"><span class="num">${s.typeCount.video || 0}</span><span class="lbl">影 · 视频</span></div>
+          <div class="storage-stat"><span class="num">${s.typeCount.pdf || 0}</span><span class="lbl">卷 · PDF</span></div>
+          <div class="storage-stat"><span class="num">${s.typeCount.archive || 0}</span><span class="lbl">囊 · 压缩</span></div>
           <div class="storage-stat"><span class="num">${s.typeCount.binary || 0}</span><span class="lbl">物 · 二进制</span></div>
         </div>
       </div>
@@ -5621,7 +6234,10 @@ function startClock() {
   const update = () => {
     const d = new Date();
     const pad = n => String(n).padStart(2, '0');
-    clock.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const h = d.getHours();
+    const ampm = h < 12 ? '上午' : '下午';
+    const h12 = h % 12 || 12;
+    clock.textContent = `${ampm} ${pad(h12)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     const months = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'];
     solar.textContent = months[d.getMonth()] + ' · ' + d.getDate() + '日';
   };
@@ -5761,6 +6377,10 @@ function bindGlobalContextMenus() {
         case 'files': fileManager.open(); break;
         case 'editor': EditorApp.open(); break;
         case 'image': ImageApp.open(); break;
+        case 'audio': AudioApp.open(); break;
+        case 'video': VideoApp.open(); break;
+        case 'pdf': PdfApp.open(); break;
+        case 'archive': ArchiveApp.open(); break;
         case 'terminal': TerminalApp.open(); break;
         case 'storage': StorageApp.open(); break;
         case 'poem': PoemApp.open(); break;
@@ -5770,6 +6390,7 @@ function bindGlobalContextMenus() {
 
     const appNames = {
       files: '书阁', editor: '笔砚', image: '画轩',
+      audio: '乐坊', video: '影阁', pdf: '卷轴', archive: '囊匣',
       terminal: '符令', storage: '仓廪', poem: '诗笺', settings: '设阁'
     };
 
