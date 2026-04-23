@@ -2894,6 +2894,8 @@ class HybridFS {
     if (['mp4','webm','ogv','m4v'].includes(ext)) return 'video';
     // PDF
     if (['pdf'].includes(ext)) return 'pdf';
+    // CSV/TSV 表格
+    if (['csv','tsv'].includes(ext)) return 'csv';
     // 文本（代码、配置、文档、网页等统一为 text）
     if (['txt','md','markdown','rst','tex','log','adoc','asciidoc','org','wiki','textile',
          'html','htm','xhtml','css','scss','sass','less','styl',
@@ -2902,7 +2904,7 @@ class HybridFS {
          'sh','bash','zsh','fish','ps1','bat','cmd',
          'lua','r','pl','sql','dart','vue','svelte','asm','v','vhd','tcl','m','mm',
          'json','json5','xml','yaml','yml','toml','ini','cfg','conf','env',
-         'csv','tsv','properties','gradle','cmake','lock',
+         'properties','gradle','cmake','lock',
          'gitignore','editorconfig','eslintrc','prettierrc','babelrc','dockerfile','makefile'].includes(ext)) return 'text';
     // 压缩包（实际可解压的格式）
     if (['zip','tar','gz','tgz'].includes(ext)) return 'archive';
@@ -3249,7 +3251,7 @@ class HybridFS {
   async stats() {
     const all = await this.getAllNodes();
     let totalSize = 0, fileCount = 0, folderCount = 0;
-    const typeCount = { text: 0, image: 0, audio: 0, video: 0, pdf: 0, archive: 0, binary: 0, folder: 0 };
+    const typeCount = { text: 0, csv: 0, image: 0, audio: 0, video: 0, pdf: 0, archive: 0, binary: 0, folder: 0 };
     for (const n of all) {
       if (n.path === '/') continue;
       typeCount[n.type] = (typeCount[n.type] || 0) + 1;
@@ -3559,6 +3561,7 @@ function getIconChar(node) {
   if (node.type === 'audio') return '乐';
   if (node.type === 'video') return '影';
   if (node.type === 'pdf') return '卷';
+  if (node.type === 'csv') return '表';
   if (node.type === 'text') return '文';
   if (node.type === 'archive') return '囊';
   return '物';
@@ -4272,7 +4275,7 @@ class FileManagerApp {
         <div>${item.name}</div>
         <div>${item.type === 'folder' ? '—' : fmtSize(item.size || 0)}</div>
         <div>${fmtTime(item.modified)}</div>
-        <div>${item.type === 'folder' ? '册' : item.type === 'image' ? '画' : item.type === 'audio' ? '乐' : item.type === 'video' ? '影' : item.type === 'pdf' ? '卷' : item.type === 'text' ? '文' : item.type === 'archive' ? '囊' : '物'}</div>
+        <div>${item.type === 'folder' ? '册' : item.type === 'image' ? '画' : item.type === 'audio' ? '乐' : item.type === 'video' ? '影' : item.type === 'pdf' ? '卷' : item.type === 'csv' ? '表' : item.type === 'text' ? '文' : item.type === 'archive' ? '囊' : '物'}</div>
       </div>
     `;
   }
@@ -4287,6 +4290,7 @@ class FileManagerApp {
     QingSi.prefs?.recordAccess(path);
     if (type === 'folder') this.loadPath(path);
     else if (type === 'text') EditorApp.openFile(path);
+    else if (type === 'csv') CsvApp.openFile(path);
     else if (type === 'image') ImageApp.openFile(path);
     else if (type === 'audio') AudioApp.openFile(path);
     else if (type === 'video') VideoApp.openFile(path);
@@ -5083,6 +5087,208 @@ const PdfApp = {
 };
 
 /* ============================================================
+   App: 表阁 · CSV/TSV 表格预览
+   ============================================================ */
+const CsvApp = {
+  currentPath: null,
+  currentContent: '',
+
+  open() {
+    const root = document.createElement('div');
+    root.style.cssText = 'flex:1;display:flex;flex-direction:column;width:100%;height:100%;';
+    root.innerHTML = `
+      <div class="editor-toolbar">
+        <button class="fm-btn" id="cv-open">开</button>
+        <button class="fm-btn primary" id="cv-toggle">阅原文</button>
+        <button class="fm-btn" id="cv-save">藏</button>
+        <span class="editor-info" id="cv-info">未择 · —</span>
+      </div>
+      <div class="csv-viewer" id="cv-view" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="font-family:'Ma Shan Zheng',cursive;color:var(--willow-mist);font-size:48px;letter-spacing:0.3em;text-align:center;margin:auto;">
+          表阁<br><span style="font-size:14px;letter-spacing:0.2em;">— 双击书阁中之表格以览 —</span>
+        </div>
+      </div>
+      <textarea id="cv-editor" style="display:none;flex:1;background:var(--paper);border:none;color:var(--ink);padding:16px;font-family:'Noto Serif SC',serif;font-size:14px;resize:none;line-height:1.8;width:100%;outline:none;touch-action:auto;-webkit-overflow-scrolling:touch;"></textarea>
+    `;
+    WindowManager.create({
+      id: 'csv', title: '表阁 · 表格阅览',
+      width: 860, height: 580, content: root
+    });
+    root.querySelector('#cv-open').onclick = () => {
+      modal({
+        title: '开启表格', input: true, defaultValue: '/表格/',
+        onOk: async (path) => this.openFile(path)
+      });
+    };
+    root.querySelector('#cv-toggle').onclick = () => this.toggleMode();
+    root.querySelector('#cv-save').onclick = () => this.save();
+  },
+
+  toggleMode() {
+    const view = document.querySelector('#cv-view');
+    const editor = document.querySelector('#cv-editor');
+    const btn = document.querySelector('#cv-toggle');
+
+    if (view.style.display === 'none') {
+      // 切回表格模式：重新解析编辑器中的内容
+      this.currentContent = editor.value;
+      this._renderTable(this.currentContent);
+      view.style.display = 'flex';
+      editor.style.display = 'none';
+      btn.textContent = '阅原文';
+    } else {
+      // 切到文本模式
+      editor.value = this.currentContent;
+      view.style.display = 'none';
+      editor.style.display = 'block';
+      btn.textContent = '观表格';
+    }
+  },
+
+  async save() {
+    if (!this.currentPath) return toast('错', '未开表格', 'error');
+    try {
+      const editor = document.querySelector('#cv-editor');
+      const content = editor.style.display !== 'none' ? editor.value : this.currentContent;
+      await QingSi.fs.writeFile(this.currentPath, content);
+      this.currentContent = content;
+      toast('藏好', this.currentPath, 'success');
+      if (QingSi.windows.files) fileManager.refresh();
+    } catch (e) { toast('藏失败', e.message, 'error'); }
+  },
+
+  async openFile(path) {
+    if (!QingSi.windows.csv) this.open();
+    setTimeout(async () => {
+      const text = await QingSi.fs.readFile(path, true);
+      if (!text) return toast('错', '无此表', 'error');
+
+      this.currentPath = path;
+      this.currentContent = text;
+
+      // 重置为表格模式
+      const view = document.querySelector('#cv-view');
+      const editor = document.querySelector('#cv-editor');
+      const btn = document.querySelector('#cv-toggle');
+      view.style.display = 'flex';
+      editor.style.display = 'none';
+      btn.textContent = '阅原文';
+
+      this._renderTable(text);
+
+      document.querySelector('#cv-info').textContent = `${path}`;
+      QingSi.prefs?.recordAccess(path);
+      WindowManager.activate('csv');
+    }, 50);
+  },
+
+  _renderTable(text) {
+    const ext = this.currentPath ? this.currentPath.split('.').pop().toLowerCase() : 'csv';
+    const delimiter = ext === 'tsv' ? '\t' : ',';
+    const lines = text.split('\n').filter(l => l.trim());
+
+    // 解析 CSV/TSV（支持引号转义）
+    const parseRow = (line) => {
+      const cells = [];
+      let cell = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            cell += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === delimiter && !inQuotes) {
+          cells.push(cell.trim());
+          cell = '';
+        } else {
+          cell += char;
+        }
+      }
+      cells.push(cell.trim());
+      return cells;
+    };
+
+    const rows = lines.map(parseRow);
+    const maxCols = Math.max(...rows.map(r => r.length), 1);
+
+    // 转义 HTML
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    let tableHtml = `
+      <style>
+        .csv-table-wrap {
+          flex: 1; overflow: auto; background: var(--paper);
+          touch-action: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .csv-table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+        .csv-table-wrap::-webkit-scrollbar-track { background: transparent; }
+        .csv-table-wrap::-webkit-scrollbar-thumb { background: var(--willow-mist); border-radius: 4px; opacity: 0.4; }
+        .csv-table-wrap::-webkit-scrollbar-thumb:hover { background: var(--gold); opacity: 0.7; }
+        .csv-table-wrap::-webkit-scrollbar-corner { background: transparent; }
+        .csv-table {
+          width: 100%; border-collapse: collapse;
+          font-size: 13px; font-family: 'Noto Serif SC', serif;
+        }
+        .csv-table th {
+          background: linear-gradient(180deg, var(--surface-bg-soft), var(--surface-bg));
+          color: var(--surface-text);
+          padding: 10px 12px; text-align: left; font-weight: 500;
+          font-family: 'Ma Shan Zheng', cursive;
+          font-size: 14px; letter-spacing: 0.1em;
+          border-bottom: 1px solid var(--border-subtle);
+          position: sticky; top: 0; z-index: 1;
+          white-space: nowrap;
+        }
+        .csv-table td {
+          padding: 8px 12px;
+          border-bottom: 1px solid var(--border-subtle);
+          color: var(--ink);
+          white-space: nowrap;
+        }
+        .csv-table tr:hover td { background: rgba(176, 138, 74, 0.1); }
+        .csv-table tr:nth-child(even) { background: var(--hover-bg); }
+        .csv-stats {
+          padding: 8px 14px;
+          background: var(--paper-deep);
+          border-bottom: 1px solid var(--border-subtle);
+          font-size: 12px; color: var(--ink-soft);
+          font-family: 'ZCOOL XiaoWei', serif;
+          flex-shrink: 0;
+        }
+      </style>
+      <div class="csv-stats">
+        共 ${rows.length} 行 · ${maxCols} 列 · ${text.length} 字
+      </div>
+      <div class="csv-table-wrap">
+        <table class="csv-table">
+          <thead>
+            <tr>
+              ${Array.from({length: maxCols}, (_, i) => `<th>列 ${i + 1}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                ${Array.from({length: maxCols}, (_, i) => `<td>${esc(row[i] || '')}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const view = document.querySelector('#cv-view');
+    view.innerHTML = tableHtml;
+    view.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--paper);';
+  }
+};
+
+/* ============================================================
    压缩包解析工具（零依赖，使用原生 DecompressionStream）
    ============================================================ */
 
@@ -5818,6 +6024,7 @@ const StorageApp = {
         <h3>类型分布</h3>
         <div class="storage-stats">
           <div class="storage-stat"><span class="num">${s.typeCount.text || 0}</span><span class="lbl">文 · 文本</span></div>
+          <div class="storage-stat"><span class="num">${s.typeCount.csv || 0}</span><span class="lbl">表 · 表格</span></div>
           <div class="storage-stat"><span class="num">${s.typeCount.image || 0}</span><span class="lbl">画 · 图像</span></div>
           <div class="storage-stat"><span class="num">${s.typeCount.audio || 0}</span><span class="lbl">乐 · 音频</span></div>
           <div class="storage-stat"><span class="num">${s.typeCount.video || 0}</span><span class="lbl">影 · 视频</span></div>
@@ -6231,13 +6438,59 @@ const SettingsApp = {
 function startClock() {
   const clock = document.getElementById('clock');
   const solar = document.getElementById('solar');
+  const pad = n => String(n).padStart(2, '0');
+
+  // 测量 0-9 每个数字的宽度，用细空格补齐到最宽数字宽度，消除数字不等宽抖动
+  const digitWidths = {};
+  let maxDigitW = 0;
+  for (let d = 0; d <= 9; d++) {
+    clock.textContent = String(d);
+    const w = clock.offsetWidth;
+    digitWidths[d] = w;
+    if (w > maxDigitW) maxDigitW = w;
+  }
+  // 用 &#8202; (thin space) 补齐每个数字到等宽
+  const thinSpace = '\u2009';
+  const padDigit = (ch) => {
+    const w = digitWidths[Number(ch)];
+    if (w >= maxDigitW) return ch;
+    // 测量 thin space 宽度
+    clock.textContent = ch + thinSpace;
+    const ws = clock.offsetWidth - w;
+    if (ws <= 0) return ch;
+    const need = Math.ceil((maxDigitW - w) / ws);
+    return ch + thinSpace.repeat(need);
+  };
+
+  // 测量所有时间文本最大宽度，固定容器宽度
+  const samples = [];
+  for (const ap of ['上午','下午']) {
+    for (let hr = 1; hr <= 12; hr++) {
+      for (let mn = 0; mn <= 59; mn += 10) {
+        for (let sc = 0; sc <= 59; sc += 10) {
+          samples.push(`${ap} ${pad(hr)}:${pad(mn)}:${pad(sc)}`);
+        }
+      }
+    }
+  }
+  let maxW = 0;
+  for (const s of samples) {
+    clock.textContent = s;
+    const w = clock.offsetWidth;
+    if (w > maxW) maxW = w;
+  }
+  clock.style.width = maxW + 'px';
+  clock.style.textAlign = 'left';
+
   const update = () => {
     const d = new Date();
-    const pad = n => String(n).padStart(2, '0');
     const h = d.getHours();
     const ampm = h < 12 ? '上午' : '下午';
     const h12 = h % 12 || 12;
-    clock.textContent = `${ampm} ${pad(h12)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const timeStr = `${pad(h12)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    // 对每个数字补齐宽度
+    const fixed = timeStr.replace(/\d/g, padDigit);
+    clock.textContent = `${ampm} ${fixed}`;
     const months = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'];
     solar.textContent = months[d.getMonth()] + ' · ' + d.getDate() + '日';
   };
