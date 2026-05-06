@@ -2155,6 +2155,36 @@ html, body {
 }
 
 .welcome-card .name-input:focus { border-color: var(--gold); }
+
+/* ── 拖拽到真实桌面 ── */
+.fm-item.drag-dragging, .fm-list-row.drag-dragging, .desk-icon.drag-dragging {
+  opacity: 0.5;
+  outline: 2px dashed var(--gold);
+  outline-offset: -2px;
+}
+.fm-item.drag-ready, .fm-list-row.drag-ready, .desk-icon.drag-ready {
+  cursor: grab;
+}
+.fm-item.drag-ready:active, .fm-list-row.drag-ready:active, .desk-icon.drag-ready:active {
+  cursor: grabbing;
+}
+.fm-drop-target {
+  background: rgba(0, 120, 212, 0.08) !important;
+}
+.fm-drop-target::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px dashed rgba(0, 120, 212, 0.4);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 50;
+}
+#desktop.drag-over {
+  outline: 3px dashed var(--gold);
+  outline-offset: -6px;
+}
+
 </style>
 <script>
 // 在渲染前同步检查是否跳过加载动画，避免闪烁
@@ -2294,6 +2324,188 @@ const QingSi = {
   zIndex: 100,
   cores: { opfs: false, idb: false, ls: false, ck: false }
 };
+
+/* ============================================================
+   MIME 类型映射表（用于拖拽到真实桌面）
+   ============================================================ */
+function getMimeType(filename) {
+  const ext = (filename || '').split('.').pop().toLowerCase();
+  const mimeMap = {
+    'txt': 'text/plain', 'html': 'text/html', 'htm': 'text/html',
+    'css': 'text/css', 'js': 'application/javascript', 'json': 'application/json',
+    'xml': 'application/xml', 'pdf': 'application/pdf',
+    'doc': 'application/msword', 'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel', 'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint', 'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'gif': 'image/gif',
+    'svg': 'image/svg+xml', 'webp': 'image/webp', 'bmp': 'image/bmp', 'ico': 'image/x-icon',
+    'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg', 'flac': 'audio/flac',
+    'mp4': 'video/mp4', 'webm': 'video/webm', 'avi': 'video/x-msvideo', 'mov': 'video/quicktime',
+    'zip': 'application/zip', 'rar': 'application/vnd.rar', '7z': 'application/x-7z-compressed',
+    'gz': 'application/gzip', 'tar': 'application/x-tar',
+    'csv': 'text/csv', 'md': 'text/markdown', 'yaml': 'text/yaml', 'yml': 'text/yaml',
+    'ttf': 'font/ttf', 'woff': 'font/woff', 'woff2': 'font/woff2',
+  };
+  return mimeMap[ext] || 'application/octet-stream';
+}
+
+/* ============================================================
+   拖拽到真实桌面 - 全局基础设施（无外部依赖）
+   原理: mousedown 开始异步预加载文件 → dragstart 同步设置 DataTransfer
+   已预加载的: 真实文件数据；未就绪的: 占位 Blob 防红叉
+   多重保障: DownloadURL(Chrome独有) + items.add(标准) + text/plain(元数据)
+   ============================================================ */
+const _dragFileCache = new Map();
+const _dragPreloading = new Set();
+let _dragBlobUrls = [];
+
+function _cleanupDragBlobUrls() {
+  setTimeout(() => {
+    _dragBlobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e) {} });
+    _dragBlobUrls = [];
+  }, 10000);
+}
+
+function _preloadFilePath(path) {
+  if (!QingSi.fs || _dragPreloading.has(path)) return;
+  _dragPreloading.add(path);
+  (async () => {
+    try {
+      const node = await QingSi.fs.getNode(path);
+      if (!node || node.type === 'folder') { _dragPreloading.delete(path); return; }
+      const blob = await QingSi.fs.readFile(path);
+      if (blob) {
+        _dragFileCache.set(path, { blob, filename: node.name });
+      }
+    } catch (e) {} finally {
+      _dragPreloading.delete(path);
+    }
+  })();
+}
+
+function _preloadFilePaths(paths) {
+  for (const p of paths) _preloadFilePath(p);
+}
+
+function _handleFMDragStart(e, draggedPath) {
+  e.stopPropagation();
+  let paths;
+  if (typeof fileManager !== 'undefined' && fileManager.selected.has(draggedPath) && fileManager.selected.size > 1) {
+    paths = Array.from(fileManager.selected);
+  } else {
+    paths = [draggedPath];
+  }
+  e.dataTransfer.effectAllowed = 'copyMove';
+  let hasReal = false;
+  for (const p of paths) {
+    const name = QingSi.fs._basename(p);
+    const mime = getMimeType(name);
+    const cached = _dragFileCache.get(p);
+    let blob;
+    if (cached && cached.blob) {
+      blob = cached.blob;
+      hasReal = true;
+    } else {
+      blob = new Blob([''], { type: 'text/plain' });
+    }
+    const file = new File([blob], name, { type: mime, lastModified: Date.now() });
+    if (e.dataTransfer.items && e.dataTransfer.items.add) {
+      e.dataTransfer.items.add(file);
+    }
+  }
+  if (paths.length === 1) {
+    const p = paths[0];
+    const name = QingSi.fs._basename(p);
+    const mime = getMimeType(name);
+    const cached = _dragFileCache.get(p);
+    const blob = (cached && cached.blob) ? cached.blob : new Blob([''], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    _dragBlobUrls.push(url);
+    e.dataTransfer.setData('DownloadURL', mime + ':' + name + ':' + url);
+  }
+  if (hasReal) {
+    e.dataTransfer.setData('text/plain', JSON.stringify(paths.map(p => QingSi.fs._basename(p))));
+  }
+  const target = e.target.closest('.fm-item, .fm-list-row');
+  if (target) target.classList.add('drag-dragging');
+}
+
+function _handleFMDragEnd(e) {
+  const target = e.target.closest('.fm-item, .fm-list-row');
+  if (target) target.classList.remove('drag-dragging');
+  _cleanupDragBlobUrls();
+}
+
+/* ============================================================
+   桌面区域：从真实桌面拖入文件（反向导入）
+   ============================================================ */
+(function setupDesktopDrop() {
+  const desktop = document.getElementById('desktop');
+  if (!desktop) return;
+  desktop.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!e.target.closest('.window') && !e.target.closest('.fm-content') && !e.target.closest('.desk-icon')) {
+      desktop.classList.add('drag-over');
+    }
+  });
+  desktop.addEventListener('dragleave', (e) => {
+    if (!desktop.contains(e.relatedTarget)) desktop.classList.remove('drag-over');
+  });
+  desktop.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    desktop.classList.remove('drag-over');
+    if (e.target.closest('.window') || e.target.closest('.fm-content') || e.target.closest('.desk-icon')) return;
+    const items = e.dataTransfer.items;
+    if (!items || items.length === 0) return;
+    for (const item of items) {
+      if (item.kind !== 'file') continue;
+      const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+      if (entry) {
+        await _traverseDropEntry(entry, '/');
+      } else {
+        const file = item.getAsFile();
+        if (file) await _uploadDropFile(file, '/');
+      }
+    }
+    _refreshFMIfOpen();
+  });
+  async function _traverseDropEntry(entry, targetDir) {
+    if (entry.isFile) {
+      entry.file(async (file) => { await _uploadDropFile(file, targetDir); });
+    } else if (entry.isDirectory) {
+      const dirPath = QingSi.fs._join(targetDir, entry.name);
+      try { await QingSi.fs.mkdir(dirPath); } catch (e) {}
+      const reader = entry.createReader();
+      const readAll = () => new Promise((resolve) => {
+        const allEntries = [];
+        const readBatch = () => {
+          reader.readEntries((entries) => {
+            if (entries.length === 0) { resolve(allEntries); return; }
+            allEntries.push(...entries);
+            readBatch();
+          });
+        };
+        readBatch();
+      });
+      const entries = await readAll();
+      for (const e of entries) await _traverseDropEntry(e, dirPath);
+    }
+  }
+  async function _uploadDropFile(file, targetDir) {
+    const filePath = QingSi.fs._join(targetDir, file.name);
+    try {
+      const buffer = await file.arrayBuffer();
+      await QingSi.fs.writeFile(filePath, new Uint8Array(buffer));
+      toast('已纳', file.name, 'success');
+    } catch (err) { toast('导入失败', file.name + ': ' + err.message, 'error'); }
+  }
+  function _refreshFMIfOpen() {
+    if (typeof fileManager !== 'undefined' && QingSi.windows.files) {
+      fileManager.refresh();
+      fileManager.refreshSidebar();
+    }
+  }
+})();
 
 /* ============================================================
    第三剑客:疾风刃 (localStorage 抽象层)
@@ -2598,6 +2810,351 @@ class SyncManager {
 }
 
 /* ============================================================
+   本地文件挂载 - File System Access API 适配层
+   ============================================================ */
+
+// ── 挂载信息持久化（独立 IndexedDB） ──
+// FileSystemDirectoryHandle 是结构化克隆兼容的，可存入 IndexedDB
+// 刷新后通过 queryPermission/requestPermission 恢复权限
+const _MOUNT_DB_NAME = 'QingSi_MountedFoldersDB';
+const _MOUNT_DB_VERSION = 1;
+const _MOUNT_STORE = 'folders';
+
+function _openMountDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(_MOUNT_DB_NAME, _MOUNT_DB_VERSION);
+    const timeout = setTimeout(() => reject(new Error('挂载数据库打开超时')), 5000);
+    req.onerror = () => { clearTimeout(timeout); reject(req.error); };
+    req.onsuccess = () => { clearTimeout(timeout); resolve(req.result); };
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(_MOUNT_STORE)) {
+        db.createObjectStore(_MOUNT_STORE, { keyPath: 'id' });
+      }
+    };
+  });
+}
+
+async function _saveMountToDB(mountPoint, mountName, dirHandle) {
+  try {
+    const db = await _openMountDB();
+    const tx = db.transaction(_MOUNT_STORE, 'readwrite');
+    const store = tx.objectStore(_MOUNT_STORE);
+    store.put({ id: mountPoint, name: mountName, handle: dirHandle, mountPoint });
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+    console.log('%c[青丝]%c 挂载信息已持久化: ' + mountName, 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
+  } catch (e) {
+    console.warn('[青丝] 挂载信息持久化失败:', e);
+  }
+}
+
+async function _removeMountFromDB(mountPoint) {
+  try {
+    const db = await _openMountDB();
+    const tx = db.transaction(_MOUNT_STORE, 'readwrite');
+    const store = tx.objectStore(_MOUNT_STORE);
+    store.delete(mountPoint);
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch (e) {
+    console.warn('[青丝] 删除挂载记录失败:', e);
+  }
+}
+
+async function _loadMountsFromDB() {
+  try {
+    const db = await _openMountDB();
+    const tx = db.transaction(_MOUNT_STORE, 'readonly');
+    const store = tx.objectStore(_MOUNT_STORE);
+    const req = store.getAll();
+    const folders = await new Promise((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return folders;
+  } catch (e) {
+    console.warn('[青丝] 读取挂载记录失败:', e);
+    return [];
+  }
+}
+
+class MountedLocalFS {
+  constructor(dirHandle, mountName) {
+    this._handle = dirHandle;
+    this._name = mountName;
+    this._permissionLost = false;
+    this._permissionChecked = false;
+  }
+
+  async _checkPermission() {
+    try {
+      if (this._handle.queryPermission) {
+        const perm = await this._handle.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+          try {
+            const req = await this._handle.requestPermission({ mode: 'readwrite' });
+            this._permissionLost = req !== 'granted';
+          } catch (e) {
+            this._permissionLost = true;
+          }
+        } else {
+          this._permissionLost = false;
+        }
+      }
+    } catch (e) {
+      this._permissionLost = true;
+    }
+    this._permissionChecked = true;
+  }
+
+  get permissionLost() { return this._permissionLost; }
+  get mountName() { return this._name; }
+
+  async _ensurePermission() {
+    if (!this._permissionChecked) await this._checkPermission();
+    if (this._permissionLost) {
+      // 再次尝试请求权限
+      await this._checkPermission();
+      if (this._permissionLost) throw new Error('本地目录权限已丢失，请重新挂载');
+    }
+  }
+
+  _resolvePath(path) {
+    // path 是相对于挂载点的路径，如 "/file.txt" 或 "/sub/file.txt"
+    if (!path || path === '/') return [];
+    return path.split('/').filter(Boolean);
+  }
+
+  async _getDirHandle(path) {
+    await this._ensurePermission();
+    const parts = this._resolvePath(path);
+    let dir = this._handle;
+    for (const p of parts) {
+      dir = await dir.getDirectoryHandle(p, { create: false });
+    }
+    return dir;
+  }
+
+  async _getDirHandleOrCreate(path) {
+    await this._ensurePermission();
+    const parts = this._resolvePath(path);
+    let dir = this._handle;
+    for (const p of parts) {
+      dir = await dir.getDirectoryHandle(p, { create: true });
+    }
+    return dir;
+  }
+
+  async _getFileHandle(path, create = false) {
+    await this._ensurePermission();
+    const parts = this._resolvePath(path);
+    if (parts.length === 0) throw new Error('路径不可为目录');
+    const fileName = parts.pop();
+    let dir = this._handle;
+    for (const p of parts) {
+      dir = await dir.getDirectoryHandle(p, { create });
+    }
+    return dir.getFileHandle(fileName, { create });
+  }
+
+  _detectType(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (['png','jpg','jpeg','gif','webp','svg','bmp','ico','tiff','tif','avif','apng'].includes(ext)) return 'image';
+    if (['mp3','wav','ogg','m4a','flac','aac','opus','mid','midi','au','snd'].includes(ext)) return 'audio';
+    if (['mp4','webm','ogv','m4v'].includes(ext)) return 'video';
+    if (['pdf'].includes(ext)) return 'pdf';
+    if (['csv','tsv'].includes(ext)) return 'csv';
+    if (['txt','md','markdown','rst','tex','log','adoc','asciidoc','org','wiki','textile',
+         'html','htm','xhtml','css','scss','sass','less','styl',
+         'js','ts','jsx','tsx','mjs','cjs',
+         'py','rb','go','rs','java','c','cpp','h','hpp','cs','php','swift','kt','scala',
+         'sh','bash','zsh','fish','ps1','bat','cmd',
+         'lua','r','pl','sql','dart','vue','svelte','asm','v','vhd','tcl','m','mm',
+         'json','json5','xml','yaml','yml','toml','ini','cfg','conf','env',
+         'properties','gradle','cmake','lock',
+         'gitignore','editorconfig','eslintrc','prettierrc','babelrc','dockerfile','makefile'].includes(ext)) return 'text';
+    if (['zip','tar','gz','tgz'].includes(ext)) return 'archive';
+    return 'binary';
+  }
+
+  async listChildren(path) {
+    const dir = await this._getDirHandle(path);
+    const children = [];
+    for await (const [name, handle] of dir.entries()) {
+      let size = 0, modified = Date.now();
+      if (handle.kind === 'file') {
+        try {
+          const file = await handle.getFile();
+          size = file.size;
+          modified = file.lastModified;
+        } catch (e) { /* 权限不足等 */ }
+      }
+      const fullPath = path === '/' ? '/' + name : path + '/' + name;
+      children.push({
+        path: fullPath,
+        name: name,
+        type: handle.kind === 'directory' ? 'folder' : this._detectType(name),
+        parent: path,
+        size: size,
+        modified: modified,
+        created: modified,
+        _isLocal: true
+      });
+    }
+    return children;
+  }
+
+  async getNode(path) {
+    const parts = this._resolvePath(path);
+    if (parts.length === 0) {
+      return { path: '/', name: '/', type: 'folder', parent: null, size: 0, modified: Date.now(), created: Date.now(), _isLocal: true };
+    }
+    const parentPath = '/' + parts.slice(0, -1).join('/');
+    const name = parts[parts.length - 1];
+    try {
+      const parentDir = await this._getDirHandle(parentPath);
+      const handle = await parentDir.getDirectoryHandle(name, { create: false }).catch(() => null);
+      if (handle) {
+        return { path, name, type: 'folder', parent: parentPath, size: 0, modified: Date.now(), created: Date.now(), _isLocal: true };
+      }
+      const fileHandle = await parentDir.getFileHandle(name);
+      const file = await fileHandle.getFile();
+      return { path, name, type: this._detectType(name), parent: parentPath, size: file.size, modified: file.lastModified, created: file.lastModified, _isLocal: true };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async readFile(path, asText = false) {
+    const handle = await this._getFileHandle(path);
+    const file = await handle.getFile();
+    if (asText) return await file.text();
+    return file;
+  }
+
+  async writeFile(path, content) {
+    const handle = await this._getFileHandle(path, true);
+    const writable = await handle.createWritable();
+    try {
+      let data;
+      if (content instanceof Blob) data = content;
+      else if (content instanceof ArrayBuffer) data = new Blob([content]);
+      else if (content instanceof Uint8Array) data = new Blob([content]);
+      else data = new Blob([String(content)], { type: 'text/plain' });
+      await writable.write(data);
+      await writable.close();
+    } catch (e) {
+      try { await writable.abort(); } catch (_) {}
+      throw e;
+    }
+  }
+
+  async mkdir(path) {
+    const parts = this._resolvePath(path);
+    if (parts.length === 0) throw new Error('根目录已存');
+    await this._getDirHandleOrCreate(path);
+  }
+
+  async delete(path) {
+    const parts = this._resolvePath(path);
+    if (parts.length === 0) throw new Error('不可删除根目录');
+    const name = parts.pop();
+    const parentDir = await this._getDirHandle('/' + parts.join('/'));
+    await parentDir.removeEntry(name, { recursive: true });
+  }
+
+  async rename(oldPath, newName) {
+    // File System Access API 不支持直接重命名，需要复制+删除
+    const node = await this.getNode(oldPath);
+    if (!node) throw new Error('不存在');
+    const parentParts = this._resolvePath(oldPath);
+    parentParts.pop();
+    const parentPath = '/' + parentParts.join('/');
+    const newPath = parentPath === '/' ? '/' + newName : parentPath + '/' + newName;
+    if (oldPath === newPath) return; // 同名无需操作
+
+    if (node.type === 'folder') {
+      // 文件夹：递归复制内容到新文件夹，然后删除旧文件夹
+      await this.mkdir(newPath);
+      await this._copyDirContents(oldPath, newPath);
+      await this.delete(oldPath);
+    } else {
+      const blob = await this.readFile(oldPath);
+      await this.writeFile(newPath, blob);
+      await this.delete(oldPath);
+    }
+  }
+
+  async _copyDirContents(srcPath, destPath) {
+    const children = await this.listChildren(srcPath);
+    for (const c of children) {
+      const relPath = c.path.substring(srcPath.length);
+      const destItemPath = destPath + relPath;
+      if (c.type === 'folder') {
+        await this.mkdir(destItemPath);
+        await this._copyDirContents(c.path, destItemPath);
+      } else {
+        try {
+          const blob = await this.readFile(c.path);
+          await this.writeFile(destItemPath, blob);
+        } catch (e) {
+          console.warn('[青丝] 复制文件失败:', c.path, e);
+        }
+      }
+    }
+  }
+
+  async exists(path) {
+    try {
+      const node = await this.getNode(path);
+      return !!node;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async copy(srcPath, destPath) {
+    const node = await this.getNode(srcPath);
+    if (!node) throw new Error('源不存在');
+    if (node.type === 'folder') {
+      await this.mkdir(destPath);
+      const children = await this.listChildren(srcPath);
+      for (const c of children) {
+        const relPath = c.path.substring(srcPath.length);
+        await this.copy(c.path, destPath + relPath);
+      }
+    } else {
+      const blob = await this.readFile(srcPath);
+      await this.writeFile(destPath, blob);
+    }
+  }
+
+  async search(query, root = '/') {
+    const results = [];
+    const q = query.toLowerCase();
+    const searchDir = async (path) => {
+      try {
+        const children = await this.listChildren(path);
+        for (const c of children) {
+          if (c.name.toLowerCase().includes(q)) results.push(c);
+          if (c.type === 'folder') await searchDir(c.path);
+        }
+      } catch (e) { /* 权限不足时跳过 */ }
+    };
+    await searchDir(root);
+    return results;
+  }
+}
+
+/* ============================================================
    主从核:OPFS + IndexedDB
    ============================================================ */
 class HybridFS {
@@ -2609,6 +3166,126 @@ class HybridFS {
     this.useOPFS = false;
     this._locks = new Map();
     this._trash = [];
+    // ── 本地文件挂载点 ──
+    this._mounts = new Map(); // mountPoint -> MountedLocalFS
+    this._mountPrefix = '/mnt/local/';
+  }
+
+  // ── 挂载点管理 ──
+
+  /**
+   * 检查 File System Access API 是否可用
+   */
+  static isFileSystemAccessSupported() {
+    return !!window.showDirectoryPicker;
+  }
+
+  /**
+   * 获取所有挂载点信息
+   */
+  getMounts() {
+    const mounts = [];
+    for (const [point, fs] of this._mounts) {
+      mounts.push({ point, name: fs.mountName, permissionLost: fs.permissionLost });
+    }
+    return mounts;
+  }
+
+  /**
+   * 检查路径是否在挂载点下，返回 { mountFS, relativePath } 或 null
+   */
+  _resolveMount(fullPath) {
+    if (!fullPath) return null;
+    fullPath = this._normalizePath(fullPath);
+    if (!fullPath.startsWith(this._mountPrefix)) return null;
+    const rest = fullPath.substring(this._mountPrefix.length);
+    if (!rest) return null;
+    const slashIdx = rest.indexOf('/');
+    const mountName = slashIdx === -1 ? rest : rest.substring(0, slashIdx);
+    const mountPoint = this._mountPrefix + mountName;
+    const mountFS = this._mounts.get(mountPoint);
+    if (!mountFS) return null;
+    const relativePath = slashIdx === -1 ? '/' : rest.substring(slashIdx);
+    return { mountFS, relativePath, mountPoint };
+  }
+
+  /**
+   * 挂载本地目录
+   */
+  async mountLocal(dirHandle, mountName) {
+    if (!mountName || !mountName.trim()) throw new Error('挂载名不可为空');
+    mountName = mountName.trim().replace(/[\/\\:*?"<>|]/g, '_');
+    const mountPoint = this._mountPrefix + mountName;
+    if (this._mounts.has(mountPoint)) throw new Error('挂载点已存在: ' + mountName);
+
+    const localFS = new MountedLocalFS(dirHandle, mountName);
+    this._mounts.set(mountPoint, localFS);
+
+    // 在虚拟文件系统中创建挂载点目录（作为标记）
+    try {
+      const node = await this.getNode(mountPoint);
+      if (!node) {
+        await this._putNode({
+          path: mountPoint, name: mountName, type: 'folder',
+          parent: this._parentPath(mountPoint),
+          created: Date.now(), modified: Date.now(), size: 0, _isMountPoint: true
+        });
+      } else {
+        await this._putNode({ ...node, _isMountPoint: true });
+      }
+    } catch (e) {
+      console.warn('[青丝] 挂载点节点创建失败:', e);
+    }
+
+    QingSi.sync?.broadcast('fs:mounted', { point: mountPoint, name: mountName });
+    QingSi.cache?.invalidate('/');
+    console.log('%c[青丝]%c 已挂载本地目录: ' + mountName + ' → ' + mountPoint, 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
+
+    // 持久化挂载信息到 IndexedDB，刷新后可恢复
+    await _saveMountToDB(mountPoint, mountName, dirHandle);
+
+    return mountPoint;
+  }
+
+  /**
+   * 卸载本地目录
+   */
+  async unmountLocal(mountPoint) {
+    const mountFS = this._mounts.get(mountPoint);
+    if (!mountFS) throw new Error('挂载点不存在: ' + mountPoint);
+    this._mounts.delete(mountPoint);
+
+    // 清理虚拟文件系统中的挂载点标记节点
+    try {
+      await this._deleteNodeMeta(mountPoint);
+    } catch (e) {
+      console.warn('[青丝] 挂载点节点清理失败:', e);
+    }
+
+    // 从持久化数据库中删除挂载记录
+    await _removeMountFromDB(mountPoint);
+
+    QingSi.sync?.broadcast('fs:unmounted', { point: mountPoint });
+    QingSi.cache?.invalidate('/');
+    console.log('%c[青丝]%c 已卸载: ' + mountPoint, 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
+  }
+
+  /**
+   * 通过 showDirectoryPicker 挂载本地目录（用户交互入口）
+   */
+  async mountLocalPicker() {
+    if (!HybridFS.isFileSystemAccessSupported()) {
+      throw new Error('此浏览器不支持挂载，请使用铬或边');
+    }
+    let dirHandle;
+    try {
+      dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    } catch (e) {
+      if (e.name === 'AbortError') return null; // 用户取消
+      throw e;
+    }
+    const mountName = dirHandle.name;
+    return await this.mountLocal(dirHandle, mountName);
   }
 
   _normalizePath(path) {
@@ -2665,6 +3342,79 @@ class HybridFS {
     }
 
     await this._repairInconsistencies();
+
+    // ── 恢复上次持久化的本地文件夹挂载 ──
+    await this._restoreMountedFolders();
+  }
+
+  /**
+   * 从 IndexedDB 恢复之前持久化的本地文件夹挂载
+   * 采用三级权限恢复策略（参考 JISHENG OS）：
+   * 1. queryPermission（静默检查）
+   * 2. requestPermission（交互请求）
+   * 3. 标记 disconnected（延迟恢复）
+   */
+  async _restoreMountedFolders() {
+    if (!HybridFS.isFileSystemAccessSupported()) return;
+
+    try {
+      const folders = await _loadMountsFromDB();
+      if (!folders || folders.length === 0) return;
+
+      console.log('%c[青丝]%c 发现 ' + folders.length + ' 个持久化挂载记录，正在恢复...', 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
+
+      for (const folder of folders) {
+        try {
+          const { handle, name, mountPoint } = folder;
+          if (!handle || typeof handle.queryPermission !== 'function') {
+            console.warn('[青丝] 挂载记录 handle 无效，跳过:', name);
+            await _removeMountFromDB(mountPoint);
+            continue;
+          }
+
+          // 第一步：静默查询权限
+          const perm = await handle.queryPermission({ mode: 'readwrite' });
+          if (perm === 'granted') {
+            // 权限有效，直接恢复挂载
+            const localFS = new MountedLocalFS(handle, name);
+            this._mounts.set(mountPoint, localFS);
+            console.log('%c[青丝]%c 自动恢复挂载: ' + name, 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
+            continue;
+          }
+
+          // 第二步：尝试请求权限（可能弹出权限提示）
+          try {
+            const reqPerm = await handle.requestPermission({ mode: 'readwrite' });
+            if (reqPerm === 'granted') {
+              const localFS = new MountedLocalFS(handle, name);
+              this._mounts.set(mountPoint, localFS);
+              console.log('%c[青丝]%c 权限恢复成功，已挂载: ' + name, 'color:#b08a4a;font-weight:bold', 'color:#7a8b6f');
+            } else {
+              // 权限被拒绝，标记为断开连接
+              const localFS = new MountedLocalFS(handle, name);
+              localFS._permissionLost = true;
+              localFS._permissionChecked = true;
+              this._mounts.set(mountPoint, localFS);
+              console.warn('[青丝] 挂载权限被拒绝（已标记断开）: ' + name);
+            }
+          } catch (reqErr) {
+            // requestPermission 失败（用户关闭弹窗等），标记断开
+            const localFS = new MountedLocalFS(handle, name);
+            localFS._permissionLost = true;
+            localFS._permissionChecked = true;
+            this._mounts.set(mountPoint, localFS);
+            console.warn('[青丝] 权限请求失败（已标记断开）: ' + name, reqErr.message);
+          }
+        } catch (e) {
+          console.warn('[青丝] 恢复挂载失败: ' + (folder.name || 'unknown'), e);
+        }
+      }
+
+      QingSi.sync?.broadcast('fs:mounted', { restored: true });
+      QingSi.cache?.invalidate('/');
+    } catch (e) {
+      console.warn('[青丝] 恢复挂载过程出错:', e);
+    }
   }
 
   async _repairInconsistencies() {
@@ -2744,6 +3494,26 @@ class HybridFS {
 
   async getNode(path) {
     path = this._normalizePath(path);
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(path);
+    if (mount) {
+      return await mount.mountFS.getNode(mount.relativePath);
+    }
+    // ── 挂载点根目录 ──
+    if (this._mounts.has(path)) {
+      const fs = this._mounts.get(path);
+      return { path, name: fs.mountName, type: 'folder', parent: this._parentPath(path), size: 0, modified: Date.now(), created: Date.now(), _isMountPoint: true, _isLocal: true };
+    }
+    // ── /mnt/local 目录 ──
+    if (path === '/mnt/local' || path === '/mnt') {
+      const node = await this._getNodeVirtual(path);
+      if (node) return node;
+      return { path, name: this._basename(path), type: 'folder', parent: this._parentPath(path), size: 0, modified: Date.now(), created: Date.now(), _isLocal: true };
+    }
+    return this._getNodeVirtual(path);
+  }
+
+  async _getNodeVirtual(path) {
     return new Promise((resolve, reject) => {
       const req = this._tx(['nodes']).objectStore('nodes').get(path);
       req.onsuccess = () => resolve(req.result);
@@ -2769,6 +3539,58 @@ class HybridFS {
 
   async listChildren(path) {
     path = this._normalizePath(path);
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(path);
+    if (mount) {
+      const children = await mount.mountFS.listChildren(mount.relativePath);
+      // 将相对路径重写为完整虚拟路径
+      const prefix = mount.mountPoint;
+      for (const c of children) {
+        c.path = prefix + c.path;
+        c.parent = prefix + (c.parent || '/');
+      }
+      return children;
+    }
+    // ── 挂载点根目录：合并虚拟子项和挂载点 ──
+    if (path === this._mountPrefix.replace(/\/$/, '') || path === '/mnt/local') {
+      const virtualChildren = await this._listChildrenVirtual(path);
+      const mountPoints = new Set(this._mounts.keys());
+      // 过滤掉已在挂载点中的虚拟节点，避免重复
+      const filtered = virtualChildren.filter(c => !mountPoints.has(c.path));
+      for (const [point, fs] of this._mounts) {
+        const name = fs.mountName;
+        filtered.push({
+          path: point, name, type: 'folder',
+          parent: path, size: 0,
+          modified: Date.now(), created: Date.now(), _isMountPoint: true, _isLocal: true
+        });
+      }
+      return filtered;
+    }
+    // ── /mnt 目录：显示 local 子目录 ──
+    if (path === '/mnt') {
+      const children = [];
+      const hasMounts = this._mounts.size > 0;
+      const localNode = await this.getNode('/mnt/local');
+      if (localNode || hasMounts) {
+        children.push({
+          path: '/mnt/local', name: 'local', type: 'folder',
+          parent: '/mnt', size: 0,
+          modified: localNode?.modified || Date.now(), created: localNode?.created || Date.now(), _isLocal: true
+        });
+      }
+      return children;
+    }
+    return new Promise((resolve, reject) => {
+      const tx = this._tx(['nodes']);
+      const idx = tx.objectStore('nodes').index('parent');
+      const req = idx.getAll(path);
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async _listChildrenVirtual(path) {
     return new Promise((resolve, reject) => {
       const tx = this._tx(['nodes']);
       const idx = tx.objectStore('nodes').index('parent');
@@ -2911,7 +3733,16 @@ class HybridFS {
     return 'binary';
   }
 
-  async exists(path) { return !!(await this.getNode(this._normalizePath(path))); }
+  async exists(path) {
+    path = this._normalizePath(path);
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(path);
+    if (mount) {
+      return await mount.mountFS.exists(mount.relativePath);
+    }
+    if (this._mounts.has(path)) return true;
+    return !!(await this._getNodeVirtual(path));
+  }
 
   async _checkQuota(requiredBytes) {
     if (navigator.storage && navigator.storage.estimate) {
@@ -2932,6 +3763,14 @@ class HybridFS {
   async mkdir(path, recursive = true) {
     path = this._normalizePath(path);
     if (!path || path === '/') throw new Error('根目录已存');
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(path);
+    if (mount) {
+      await mount.mountFS.mkdir(mount.relativePath);
+      QingSi.sync?.broadcast('fs:created', { path, type: 'folder' });
+      QingSi.cache?.invalidate(mount.mountPoint);
+      return;
+    }
     const unlock = await this._acquireLock(path);
     try {
       if (await this.exists(path)) return;
@@ -2963,6 +3802,14 @@ class HybridFS {
   async writeFile(path, content) {
     path = this._normalizePath(path);
     if (!path || path === '/') throw new Error('路径不可为空');
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(path);
+    if (mount) {
+      await mount.mountFS.writeFile(mount.relativePath, content);
+      QingSi.sync?.broadcast('fs:written', { path });
+      QingSi.cache?.invalidate(mount.mountPoint);
+      return;
+    }
     const name = this._basename(path);
     if (!name || /[\/\\:*?"<>|]/.test(name)) throw new Error('文件名不合法: ' + name);
     const unlock = await this._acquireLock(path);
@@ -2991,6 +3838,11 @@ class HybridFS {
 
   async readFile(path, asText = false) {
     path = this._normalizePath(path);
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(path);
+    if (mount) {
+      return await mount.mountFS.readFile(mount.relativePath, asText);
+    }
     const node = await this.getNode(path);
     if (!node) return null;
     if (node.type === 'folder') throw new Error('不可读取文件夹: ' + path);
@@ -3003,6 +3855,16 @@ class HybridFS {
   async delete(path) {
     path = this._normalizePath(path);
     if (!path || path === '/') throw new Error('不可删除根目录');
+    // ── 防止删除挂载点根目录 ──
+    if (this._mounts.has(path)) throw new Error('不可删除挂载点根目录，请使用卸载功能');
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(path);
+    if (mount) {
+      await mount.mountFS.delete(mount.relativePath);
+      QingSi.sync?.broadcast('fs:deleted', { path });
+      QingSi.cache?.invalidate(mount.mountPoint);
+      return;
+    }
     const enableTrash = QingSi.prefs?.get('enableTrash', false);
     const unlock = await this._acquireLock(path);
     try {
@@ -3061,6 +3923,14 @@ class HybridFS {
 
   async rename(oldPath, newName) {
     oldPath = this._normalizePath(oldPath);
+    // ── 挂载点路由 ──
+    const mount = this._resolveMount(oldPath);
+    if (mount) {
+      await mount.mountFS.rename(mount.relativePath, newName);
+      QingSi.sync?.broadcast('fs:moved', { from: oldPath, to: this._join(this._parentPath(oldPath), newName) });
+      QingSi.cache?.invalidate(mount.mountPoint);
+      return;
+    }
     const node = await this.getNode(oldPath);
     if (!node) throw new Error('不存在');
     if (!newName || !newName.trim()) throw new Error('新名不可为空');
@@ -3130,6 +4000,43 @@ class HybridFS {
     newPath = this._normalizePath(newPath);
     if (oldPath === newPath) return;
     if (newPath.startsWith(oldPath + '/')) throw new Error('不可移入自身子目录');
+    // ── 防止移动挂载点根目录 ──
+    if (this._mounts.has(oldPath)) throw new Error('不可移动挂载点根目录，请先卸载');
+    if (this._mounts.has(newPath)) throw new Error('目标路径是挂载点根目录');
+    // ── 挂载点路由 ──
+    const oldMount = this._resolveMount(oldPath);
+    const newMount = this._resolveMount(newPath);
+    // 同一挂载点内移动
+    if (oldMount && newMount && oldMount.mountPoint === newMount.mountPoint) {
+      // 本地文件系统内移动 = copy + delete
+      await oldMount.mountFS.copy(oldMount.relativePath, newMount.relativePath);
+      await oldMount.mountFS.delete(oldMount.relativePath);
+      QingSi.sync?.broadcast('fs:moved', { oldPath, newPath });
+      QingSi.cache?.invalidate(oldMount.mountPoint);
+      return;
+    }
+    // 跨挂载点或虚拟↔本地移动 = 读取+写入+删除
+    if (oldMount || newMount) {
+      const node = await this.getNode(oldPath);
+      if (!node) throw new Error('不存在: ' + oldPath);
+      if (node.type === 'folder') {
+        // 递归复制文件夹内容
+        const children = await this.listChildren(oldPath);
+        await this.mkdir(newPath, true);
+        for (const c of children) {
+          await this.move(c.path, this._join(newPath, c.name));
+        }
+        await this.delete(oldPath);
+      } else {
+        const blob = await this.readFile(oldPath);
+        if (blob) await this.writeFile(newPath, blob);
+        await this.delete(oldPath);
+      }
+      QingSi.sync?.broadcast('fs:moved', { oldPath, newPath });
+      QingSi.cache?.invalidate(this._parentPath(oldPath) || '/');
+      QingSi.cache?.invalidate(this._parentPath(newPath) || '/');
+      return;
+    }
     // 按字典序获取锁，避免 AB-BA 死锁
     const [first, second] = oldPath < newPath ? [oldPath, newPath] : [newPath, oldPath];
     const unlock1 = await this._acquireLock(first);
@@ -3204,6 +4111,40 @@ class HybridFS {
     destPath = this._normalizePath(destPath);
     if (srcPath === destPath) throw new Error('源与目标相同');
     if (destPath.startsWith(srcPath + '/')) throw new Error('不可复制到自身子目录');
+    // ── 挂载点路由 ──
+    const srcMount = this._resolveMount(srcPath);
+    const destMount = this._resolveMount(destPath);
+    // 同一挂载点内复制
+    if (srcMount && destMount && srcMount.mountPoint === destMount.mountPoint) {
+      await srcMount.mountFS.copy(srcMount.relativePath, destMount.relativePath);
+      QingSi.sync?.broadcast('fs:copied', { srcPath, destPath });
+      QingSi.cache?.invalidate(srcMount.mountPoint);
+      return;
+    }
+    // 跨挂载点或虚拟↔本地复制 = 读取+写入
+    if (srcMount || destMount) {
+      const node = await this.getNode(srcPath);
+      if (!node) throw new Error('源不存在: ' + srcPath);
+      const destParent = this._parentPath(destPath);
+      if (destParent && destParent !== '/' && !(await this.exists(destParent))) {
+        await this.mkdir(destParent);
+      }
+      if (node.type === 'folder') {
+        await this.mkdir(destPath);
+        const children = await this.listChildren(srcPath);
+        for (const c of children) {
+          await this.copy(c.path, this._join(destPath, c.name));
+        }
+      } else {
+        const blob = await this.readFile(srcPath);
+        if (blob) {
+          await this.writeFile(destPath, blob);
+        }
+      }
+      QingSi.sync?.broadcast('fs:copied', { srcPath, destPath });
+      QingSi.cache?.invalidate(this._parentPath(destPath) || '/');
+      return;
+    }
     // 按字典序获取锁，避免死锁
     const [first, second] = srcPath < destPath ? [srcPath, destPath] : [destPath, srcPath];
     const unlock1 = await this._acquireLock(first);
@@ -3243,9 +4184,31 @@ class HybridFS {
 
   async search(query, root = '/') {
     root = this._normalizePath(root);
+    const results = [];
+    // ── 搜索虚拟文件系统 ──
     const all = await this.getAllNodes();
     const q = query.toLowerCase();
-    return all.filter(n => n.path !== '/' && n.name.toLowerCase().includes(q) && n.path.startsWith(root));
+    for (const n of all) {
+      if (n.path !== '/' && n.name.toLowerCase().includes(q) && n.path.startsWith(root)) {
+        results.push(n);
+      }
+    }
+    // ── 搜索挂载的本地目录 ──
+    for (const [point, mountFS] of this._mounts) {
+      if (!root.startsWith(point) && root !== '/') continue;
+      const searchRoot = root.startsWith(point) ? root.substring(point.length) || '/' : '/';
+      try {
+        const localResults = await mountFS.search(query, searchRoot);
+        for (const r of localResults) {
+          r.path = point + r.path;
+          r.parent = point + (r.parent || '/');
+        }
+        results.push(...localResults);
+      } catch (e) {
+        console.warn('[青丝] 搜索本地目录失败:', point, e);
+      }
+    }
+    return results;
   }
 
   async stats() {
@@ -3974,6 +4937,7 @@ class FileManagerApp {
           <button class="fm-btn primary" data-cmd="newfolder">+ 新册</button>
           <button class="fm-btn primary" data-cmd="newfile">+ 新笺</button>
           <button class="fm-btn" data-cmd="upload">⇪ 拓</button>
+          <button class="fm-btn" data-cmd="mount" title="接引外域">⊕ 挂</button>
           <button class="fm-btn" data-cmd="view">视</button>
           <input class="fm-search" id="fm-search" placeholder="觅...">
         </div>
@@ -4002,7 +4966,10 @@ class FileManagerApp {
       this._syncOff = QingSi.sync?.on((evt) => {
         if (evt.type.startsWith('fs:')) {
           this.refresh();
-          toast('他窗变动', `${evt.type}: ${evt.payload.path || ''}`, 'sync');
+          this.refreshSidebar();
+          if (evt.type === 'fs:mounted') toast('他窗引', `${evt.payload.name} 已接`, 'sync');
+          else if (evt.type === 'fs:unmounted') toast('他窗断', `${evt.payload.point} 已断`, 'sync');
+          else toast('他窗变动', `${evt.type}: ${evt.payload.path || ''}`, 'sync');
         }
       });
     }
@@ -4015,6 +4982,7 @@ class FileManagerApp {
     root.querySelector('[data-cmd="newfolder"]').onclick = () => this.newFolder();
     root.querySelector('[data-cmd="newfile"]').onclick = () => this.newFile();
     root.querySelector('[data-cmd="upload"]').onclick = () => this.upload();
+    root.querySelector('[data-cmd="mount"]').onclick = () => this.mountLocal();
     root.querySelector('[data-cmd="view"]').onclick = () => this.toggleView();
 
     const search = root.querySelector('#fm-search');
@@ -4116,6 +5084,39 @@ class FileManagerApp {
     
     await buildTree('/', 1);
 
+    // ── 本地挂载目录 ──
+    const mounts = QingSi.fs.getMounts();
+    if (mounts.length > 0) {
+      const mountSep = document.createElement('div');
+      mountSep.style.cssText = 'height:1px;background:var(--border-subtle);margin:10px 8px;';
+      sidebar.appendChild(mountSep);
+
+      const mountHeader = document.createElement('h3');
+      mountHeader.textContent = '外域接引';
+      sidebar.appendChild(mountHeader);
+
+      for (const m of mounts) {
+        const mountItem = document.createElement('div');
+        mountItem.className = 'fm-tree-item';
+        mountItem.dataset.path = m.point;
+        mountItem.style.paddingLeft = '18px';
+        if (m.point === this.currentPath) mountItem.classList.add('active');
+        const permIcon = m.permissionLost ? '<span style="color:var(--rust);font-size:10px;">⚠</span>' : '';
+        mountItem.innerHTML = `<span class="arrow">▸</span> ⊕ ${m.name} ${permIcon}`;
+        mountItem.title = m.point + (m.permissionLost ? '（灵契已散）' : '');
+        mountItem.onclick = () => this.loadPath(m.point);
+        mountItem.oncontextmenu = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showGlobalMenu(e.clientX, e.clientY, [
+            { label: '入', icon: '◎', action: () => this.loadPath(m.point) },
+            { label: '断引', icon: '⊖', action: () => this.unmountLocal(m.point) },
+          ]);
+        };
+        sidebar.appendChild(mountItem);
+      }
+    }
+
     // 回收站入口
     if (QingSi.prefs?.get('enableTrash', false)) {
       const trashSep = document.createElement('div');
@@ -4180,7 +5181,9 @@ class FileManagerApp {
   _updateStatus(children) {
     const el = document.getElementById('fm-status');
     if (el) {
-      el.textContent = `共 ${children.length} 项 · ${children.filter(c => c.type === 'folder').length} 册 · ${children.filter(c => c.type !== 'folder').length} 笺`;
+      const mount = QingSi.fs._resolveMount(this.currentPath) || (QingSi.fs._mounts.has(this.currentPath) ? { mountPoint: this.currentPath } : null);
+      const localTag = mount ? ' ⊕ 本地' : '';
+      el.textContent = `共 ${children.length} 项 · ${children.filter(c => c.type === 'folder').length} 册 · ${children.filter(c => c.type !== 'folder').length} 笺${localTag}`;
     }
   }
 
@@ -4255,6 +5258,22 @@ class FileManagerApp {
         el.ondragover = (e) => { e.preventDefault(); el.classList.add('fm-drop-target'); };
         el.ondragleave = () => el.classList.remove('fm-drop-target');
       }
+
+      el.draggable = true;
+      el.classList.add('drag-ready');
+      el.addEventListener('mouseenter', () => { _preloadFilePath(path); });
+      el.addEventListener('mousedown', () => {
+        _preloadFilePath(path);
+        if (typeof fileManager !== 'undefined' && fileManager.selected.size > 1) {
+          _preloadFilePaths(Array.from(fileManager.selected));
+        }
+      });
+      el.addEventListener('dragstart', (e) => {
+        _handleFMDragStart(e, path);
+      });
+      el.addEventListener('dragend', (e) => {
+        _handleFMDragEnd(e);
+      });
     });
   }
 
@@ -4348,6 +5367,39 @@ class FileManagerApp {
     } catch (e) { toast('上传失败', e.message, 'error'); }
   }
 
+  async mountLocal() {
+    if (!HybridFS.isFileSystemAccessSupported()) {
+      toast('错', '此境不可接引外域，请换铬或边', 'error');
+      return;
+    }
+    try {
+      const mountPoint = await QingSi.fs.mountLocalPicker();
+      if (mountPoint) {
+        toast('已接', `「${mountPoint}」已纳外域`, 'success');
+        this.refresh();
+        this.refreshSidebar();
+      }
+    } catch (e) {
+      toast('错', e.message, 'error');
+    }
+  }
+
+  async unmountLocal(mountPoint) {
+    confirm('忍断此引?', `欲断「${mountPoint}」之连结，自此两不相涉，可乎？`, async () => {
+      try {
+        await QingSi.fs.unmountLocal(mountPoint);
+        toast('已断', mountPoint, 'success');
+        // 如果当前在已卸载的目录下，导航回根目录
+        if (this.currentPath.startsWith(mountPoint)) {
+          this.loadPath('/');
+        }
+        this.refreshSidebar();
+      } catch (e) {
+        toast('错', e.message, 'error');
+      }
+    });
+  }
+
   async download(path) {
     const blob = await QingSi.fs.readFile(path);
     if (!blob) return toast('错', '无法读取', 'error');
@@ -4389,6 +5441,12 @@ class FileManagerApp {
         this.openItem(path, n.type);
       }});
       items.push({ label: '重命', icon: '✎', action: () => this.rename(path) });
+      // ── 挂载点卸载选项 ──
+      const mountInfo = QingSi.fs._resolveMount(path);
+      const isMountRoot = mountInfo && mountInfo.relativePath === '/';
+      if (isMountRoot) {
+        items.push({ label: '断引', icon: '⊖', action: () => this.unmountLocal(mountInfo.mountPoint) });
+      }
       items.push({ divider: true });
       items.push({ label: '复', icon: '⎘', action: () => this.copy(Array.from(this.selected)) });
       items.push({ label: '剪', icon: '✂', action: () => this.cut(Array.from(this.selected)) });
@@ -4407,6 +5465,9 @@ class FileManagerApp {
       items.push({ label: '新册', icon: '+', action: () => this.newFolder() });
       items.push({ label: '新笺', icon: '+', action: () => this.newFile() });
       items.push({ label: '上传', icon: '⇪', action: () => this.upload() });
+      if (HybridFS.isFileSystemAccessSupported()) {
+        items.push({ label: '接引', icon: '⊕', action: () => this.mountLocal() });
+      }
       if (this.clipboard) {
         items.push({ divider: true });
         items.push({ label: '贴', icon: '⊕', action: () => this.paste() });
@@ -4644,6 +5705,7 @@ class FileManagerApp {
 
   // ── 键盘快捷键 ──
   _handleKeyboard(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
     const ctrl = e.ctrlKey || e.metaKey;
     if (ctrl && e.key === 'a') {
       e.preventDefault();
@@ -6536,6 +7598,19 @@ function bindAppLaunchers() {
   };
   document.querySelectorAll('.desk-icon').forEach(el => {
     el.ondblclick = () => launch(el.dataset.app);
+    el.draggable = true;
+    el.classList.add('drag-ready');
+    el.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      e.dataTransfer.effectAllowed = 'copyMove';
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        type: 'app', app: el.dataset.app, label: el.querySelector('.label')?.textContent || ''
+      }));
+      el.classList.add('drag-dragging');
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('drag-dragging');
+    });
   });
   document.querySelectorAll('.dock-item').forEach(el => {
     el.onclick = () => {
