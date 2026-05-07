@@ -673,6 +673,11 @@ html, body {
   cursor: pointer;
   border-radius: 2px;
   transition: all 0.2s;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .fm-btn:hover {
@@ -696,6 +701,8 @@ html, body {
   color: var(--ink-soft);
   min-width: 200px;
   border-radius: 2px;
+  height: 30px;
+  box-sizing: border-box;
 }
 
 .fm-search {
@@ -708,6 +715,8 @@ html, body {
   border-radius: 2px;
   color: var(--ink);
   outline: none;
+  height: 30px;
+  box-sizing: border-box;
 }
 
 .fm-search:focus { border-color: var(--rust); }
@@ -727,7 +736,8 @@ html, body {
   background: rgba(28,26,23,0.05);
   border: 1px solid var(--ink-soft);
   border-radius: 2px;
-  height: 26px;
+  height: 30px;
+  box-sizing: border-box;
 }
 .bc-segment {
   cursor: pointer;
@@ -995,7 +1005,7 @@ html, body {
 }
 
 .editor-toolbar {
-  padding: 8px 16px;
+  padding: 10px 16px;
   background: var(--paper-deep);
   border-bottom: 1px solid var(--ink-soft);
   display: flex;
