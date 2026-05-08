@@ -879,6 +879,16 @@ html, body {
   z-index: 2;
 }
 
+.fm-sort-col {
+  cursor: pointer;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.fm-sort-col:hover {
+  color: var(--rust);
+}
+
 .fm-list-row {
   cursor: pointer;
   transition: all 0.15s;
@@ -5217,11 +5227,27 @@ class FileManagerApp {
       content.innerHTML = `
         <div class="fm-list">
           <div class="fm-list-header">
-            <div></div><div>名讳</div><div>大小</div><div>修改于</div><div>类</div>
+            <div></div><div data-sort="name" class="fm-sort-col">名讳${this.sortBy === 'name' ? (this.sortAsc ? ' ↑' : ' ↓') : ''}</div><div data-sort="size" class="fm-sort-col">大小${this.sortBy === 'size' ? (this.sortAsc ? ' ↑' : ' ↓') : ''}</div><div data-sort="date" class="fm-sort-col">修改于${this.sortBy === 'date' ? (this.sortAsc ? ' ↑' : ' ↓') : ''}</div><div data-sort="type" class="fm-sort-col">类${this.sortBy === 'type' ? (this.sortAsc ? ' ↑' : ' ↓') : ''}</div>
           </div>
           ${items.map(i => this.renderListItem(i)).join('')}
         </div>
       `;
+
+      // 绑定列头点击排序
+      content.querySelectorAll('.fm-sort-col').forEach(col => {
+        col.style.cursor = 'pointer';
+        col.onclick = (e) => {
+          e.stopPropagation();
+          const field = col.dataset.sort;
+          if (this.sortBy === field) {
+            this.sortAsc = !this.sortAsc;
+          } else {
+            this.sortBy = field;
+            this.sortAsc = true;
+          }
+          this.refresh();
+        };
+      });
     }
     
     content.querySelectorAll('.fm-item, .fm-list-row').forEach(el => {
@@ -7608,19 +7634,7 @@ function bindAppLaunchers() {
   };
   document.querySelectorAll('.desk-icon').forEach(el => {
     el.ondblclick = () => launch(el.dataset.app);
-    el.draggable = true;
-    el.classList.add('drag-ready');
-    el.addEventListener('dragstart', (e) => {
-      e.stopPropagation();
-      e.dataTransfer.effectAllowed = 'copyMove';
-      e.dataTransfer.setData('text/plain', JSON.stringify({
-        type: 'app', app: el.dataset.app, label: el.querySelector('.label')?.textContent || ''
-      }));
-      el.classList.add('drag-dragging');
-    });
-    el.addEventListener('dragend', () => {
-      el.classList.remove('drag-dragging');
-    });
+    // 系统应用图标不可拖拽到真实桌面
   });
   document.querySelectorAll('.dock-item').forEach(el => {
     el.onclick = () => {
